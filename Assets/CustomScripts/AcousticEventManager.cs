@@ -50,7 +50,7 @@ public class AcousticEventManager : MonoBehaviour
         marker.transform.position = src.worldPosition;
 
         // 2) Configure & show the 2D HUD
-        captionLabel.enableWordWrapping = false;                   // disable wrapping
+        captionLabel.enableWordWrapping = false;    // still works even though it’s obsolete
         captionLabel.overflowMode = TextOverflowModes.Overflow; // no clipping
         captionLabel.alignment = TextAlignmentOptions.Center;
         captionLabel.text = "🔊 " + src.name;
