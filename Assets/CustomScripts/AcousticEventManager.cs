@@ -1,66 +1,79 @@
 ﻿using UnityEngine;
 using UnityEngine.XR;
 using TMPro;
+using System.Collections;
 
 public class AcousticEventManager : MonoBehaviour
 {
     [System.Serializable]
     public class AcousticSource
     {
-        public string name;           // e.g. "Doorbell"
-        public KeyCode triggerKey;    // e.g. KeyCode.Alpha1
-        public Vector3 worldOffset;   // offset *relative* to the XR Origin
+        public string name;
+        public KeyCode triggerKey;
+        public Vector3 worldPosition;
     }
 
-    [Tooltip("Drag your XR Origin (the root of your rig) here")]
-    public Transform xrOrigin;
-
-    [Tooltip("Offsets relative to XR Origin")]
-    public AcousticSource[] sources;
-
+    [Header("3D Marker")]
     [Tooltip("Drag your HUD_Marker prefab here")]
     public GameObject hudMarkerPrefab;
 
-    [Tooltip("Uniform scale applied to each spawned marker")]
-    [Range(0.1f, 3f)]
-    public float markerScale = 1f;
+    [Header("2D World-Space HUD")]
+    [Tooltip("Drag your World-Space Canvas here")]
+    public Canvas worldSpaceHUD;
+    [Tooltip("Drag your TextMeshProUGUI caption here")]
+    public TextMeshProUGUI captionLabel;
 
-    [Tooltip("Seconds before the marker auto-destroys")]
-    public float displayTime = 5f;
+    [Header("Timing")]
+    [Tooltip("Seconds the 2D HUD stays visible")]
+    public float hudDisplayTime = 5f;
+
+    [Header("Sources")]
+    [Tooltip("Define your sound sources here")]
+    public AcousticSource[] sources;
+
+    // keep track of the running hide coroutine
+    private Coroutine hideRoutine;
 
     void Update()
     {
         foreach (var src in sources)
         {
             if (Input.GetKeyDown(src.triggerKey))
-            {
-                // compute spawn position
-                Vector3 spawnPos = xrOrigin.position + src.worldOffset;
-
-                // instantiate & scale
-                var marker = Instantiate(hudMarkerPrefab, spawnPos, Quaternion.identity);
-                marker.transform.localScale = Vector3.one * markerScale;
-
-                // face the camera
-                var cam = Camera.main.transform;
-                Vector3 dir = (cam.position - marker.transform.position).normalized;
-                marker.transform.rotation = Quaternion.LookRotation(dir);
-
-                // set the text
-                var tmp = marker.GetComponentInChildren<TextMeshPro>();
-                if (tmp != null)
-                {
-                    tmp.text = src.name;
-                    // flip the text mesh so it reads correctly
-                    tmp.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-                }
-
-                // haptic pulse
-                HapticManager.Instance.TriggerHaptic(XRNode.RightHand);
-
-                // auto-destroy
-                Destroy(marker, displayTime);
-            }
+                ShowEvent(src);
         }
+    }
+
+    void ShowEvent(AcousticSource src)
+    {
+        // 1) Spawn the 3D marker as before
+        var marker = Instantiate(hudMarkerPrefab);
+        marker.transform.position = src.worldPosition;
+
+        // 2) Configure & show the 2D HUD
+        captionLabel.enableWordWrapping = false;                   // disable wrapping
+        captionLabel.overflowMode = TextOverflowModes.Overflow; // no clipping
+        captionLabel.alignment = TextAlignmentOptions.Center;
+        captionLabel.text = "🔊 " + src.name;
+
+        worldSpaceHUD.gameObject.SetActive(true);
+
+        // position it 2m in front of the camera
+        var cam = Camera.main.transform;
+        worldSpaceHUD.transform.position = cam.position + cam.forward * 2f;
+        worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
+            worldSpaceHUD.transform.position - cam.position
+        );
+
+        // 3) Cancel any previous hide, then start a fresh one
+        if (hideRoutine != null)
+            StopCoroutine(hideRoutine);
+        hideRoutine = StartCoroutine(HideHUDDelayed(hudDisplayTime));
+    }
+
+    IEnumerator HideHUDDelayed(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        worldSpaceHUD.gameObject.SetActive(false);
+        hideRoutine = null;
     }
 }
