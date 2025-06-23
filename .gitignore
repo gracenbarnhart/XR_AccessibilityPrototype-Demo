@@ -8,6 +8,11 @@
 [Uu]serSettings/
 
 # Visual Studio / Rider
+.vs/
+*.csproj
+*.sln
+*.user
+*.suo
 *.csproj
 *.unityproj
 *.sln

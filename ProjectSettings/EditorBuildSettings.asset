@@ -9,5 +9,6 @@ EditorBuildSettings:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 7dfc74b70ee9c6642b2c32f9310007fe, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 289c1b55c9541489481df5cc06664110, type: 3}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 3594c25bce5a68c4c86d6e6ea7cf59c1, type: 2}
+    com.unity.xr.openxr.settings4: {fileID: 11400000, guid: c478538a187d5fe40907a8b210cf8d58, type: 2}
     xr.sdk.mock-hmd.settings: {fileID: 11400000, guid: 81352d2ff9d807f438461cfdabf25a5f, type: 2}
   m_UseUCBPForAssetBundles: 0
