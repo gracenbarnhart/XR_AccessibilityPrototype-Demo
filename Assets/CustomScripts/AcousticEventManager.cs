@@ -56,6 +56,19 @@ public class AcousticEventManager : MonoBehaviour
         // 2) For testing: press N to simulate a caption from speaker 0
         if (Input.GetKeyDown(KeyCode.N))
             SpeechToTextManager.Instance.SimulateCaption("Hello world", 0);
+        // … inside Update()
+        if (EyeGazeManager.Instance.TryGetGaze(out Ray gazeRay))
+        {
+            foreach (var src in sources)
+            {
+                if (Physics.Raycast(gazeRay, out RaycastHit hit) &&
+                    hit.collider.gameObject.name == src.name)
+                {
+                    ShowEvent(src);
+                }
+            }
+        }
+
     }
 
     void HandleCaption(string text, int speakerId)
