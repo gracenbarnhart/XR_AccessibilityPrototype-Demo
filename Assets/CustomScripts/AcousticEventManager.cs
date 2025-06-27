@@ -31,48 +31,52 @@ public class AcousticEventManager : MonoBehaviour
     [Tooltip("Define your sound sources here")]
     public AcousticSource[] sources;
 
-    // Keep track of the running hide coroutine
+    // Tracks the running hide coroutine so we can restart it
     private Coroutine hideRoutine;
-
-    void Update()
-    {
-        // 1) Check your sound‐source keys
-        foreach (var src in sources)
-            if (Input.GetKeyDown(src.triggerKey))
-                ShowEvent(src);
-
-        // 2) Simulate a caption with 'N' key
-        if (Input.GetKeyDown(KeyCode.N))
-            SpeechToTextManager.Instance.SimulateCaption("Hello world", 0);
-    }
 
     void OnEnable()
     {
-        // When this script becomes active, start listening
+        // Subscribe to incoming captions
         SpeechToTextManager.Instance.OnCaption += HandleCaption;
     }
 
     void OnDisable()
     {
-        // Stop listening when disabled (avoid memory leaks)
+        // Unsubscribe to avoid memory leaks
         SpeechToTextManager.Instance.OnCaption -= HandleCaption;
     }
 
-    // Called when SpeechToTextManager.SimulateCaption(...) fires
+    void Update()
+    {
+        // 1) Fire off 3D + 2D HUD when keys pressed
+        foreach (var src in sources)
+            if (Input.GetKeyDown(src.triggerKey))
+                ShowEvent(src);
+
+        // 2) For testing: press N to simulate a caption from speaker 0
+        if (Input.GetKeyDown(KeyCode.N))
+            SpeechToTextManager.Instance.SimulateCaption("Hello world", 0);
+    }
+
     void HandleCaption(string text, int speakerId)
     {
-        Debug.Log($"[HUD] HandleCaption received: “{text}” (Speaker {speakerId})");
-        captionLabel.text = $"Speaker {speakerId}: {text}";
+        // 1) Look up the saved name (defaults to "Speaker X")
+        string displayName = SpeakerManager.Instance.GetName(speakerId);
+
+        // 2) Update the caption text on the HUD
+        captionLabel.text = $"🔊 {displayName}: {text}";
+
+        // 3) Ensure the HUD panel is visible
         worldSpaceHUD.gameObject.SetActive(true);
 
-        // Position HUD in front of the camera again
+        // 4) Re-position & orient the HUD in front of the camera
         var cam = Camera.main.transform;
         worldSpaceHUD.transform.position = cam.position + cam.forward * 2f;
         worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
             worldSpaceHUD.transform.position - cam.position
         );
 
-        // Reset HUD hide timer
+        // 5) Restart the hide‐timer
         if (hideRoutine != null)
             StopCoroutine(hideRoutine);
         hideRoutine = StartCoroutine(HideHUDDelayed(hudDisplayTime));
@@ -80,29 +84,30 @@ public class AcousticEventManager : MonoBehaviour
 
     void ShowEvent(AcousticSource src)
     {
-        // 1) Spawn the 3D marker
+        // Spawn the 3D marker at the source's world position
         var marker = Instantiate(hudMarkerPrefab);
         marker.transform.position = src.worldPosition;
 
-        // 2) Configure & show the 2D HUD
+        // Configure & show the 2D HUD with the raw source name
         worldSpaceHUD.gameObject.SetActive(true);
         captionLabel.enableWordWrapping = false;
         captionLabel.overflowMode = TextOverflowModes.Overflow;
         captionLabel.alignment = TextAlignmentOptions.Center;
         captionLabel.text = "🔊 " + src.name;
 
+        // Position & orient the HUD
         var cam = Camera.main.transform;
         worldSpaceHUD.transform.position = cam.position + cam.forward * 2f;
         worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
             worldSpaceHUD.transform.position - cam.position
         );
 
-        // 3) Cancel previous hide, start new timer
+        // Restart hide-timer
         if (hideRoutine != null)
             StopCoroutine(hideRoutine);
         hideRoutine = StartCoroutine(HideHUDDelayed(hudDisplayTime));
 
-        // 4) Haptics
+        // Trigger haptic feedback on the right hand
         HapticManager.Instance.TriggerHaptic(XRNode.RightHand);
     }
 
