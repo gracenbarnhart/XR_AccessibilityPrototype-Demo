@@ -2,6 +2,7 @@
 using UnityEngine.XR;
 using TMPro;
 using System.Collections;
+using YourNamespace; // where SettingsManager and GlassesSettings live
 
 public class AcousticEventManager : MonoBehaviour
 {
@@ -56,7 +57,8 @@ public class AcousticEventManager : MonoBehaviour
         // 2) For testing: press N to simulate a caption from speaker 0
         if (Input.GetKeyDown(KeyCode.N))
             SpeechToTextManager.Instance.SimulateCaption("Hello world", 0);
-        // … inside Update()
+
+        // Eye-gaze driven speaker focus
         if (EyeGazeManager.Instance.TryGetGaze(out Ray gazeRay))
         {
             foreach (var src in sources)
@@ -68,13 +70,17 @@ public class AcousticEventManager : MonoBehaviour
                 }
             }
         }
-
     }
 
     void HandleCaption(string text, int speakerId)
     {
         // 1) Look up the saved name (defaults to "Speaker X")
         string displayName = SpeakerManager.Instance.GetName(speakerId);
+
+        // Apply configured text color and size
+        var settings = SettingsManager.Instance.settings;
+        captionLabel.color = settings.captionColor;
+        captionLabel.fontSize = settings.fontSize;
 
         // 2) Update the caption text on the HUD
         captionLabel.text = $"🔊 {displayName}: {text}";
@@ -103,6 +109,12 @@ public class AcousticEventManager : MonoBehaviour
 
         // Configure & show the 2D HUD with the raw source name
         worldSpaceHUD.gameObject.SetActive(true);
+
+        // Apply configured text color and size
+        var settings = SettingsManager.Instance.settings;
+        captionLabel.color = settings.captionColor;
+        captionLabel.fontSize = settings.fontSize;
+
         captionLabel.enableWordWrapping = false;
         captionLabel.overflowMode = TextOverflowModes.Overflow;
         captionLabel.alignment = TextAlignmentOptions.Center;
