@@ -18,6 +18,9 @@ public class GlassesSettings : ScriptableObject
 
     [Header("Naming")]
     public Color nameTextColor = Color.yellow;
+    [Header("Speaker Isolation")]
+    public bool isolateMode = false;    // off = show all speakers
+    public int isolatedSpeaker = 0;    // which speaker to show when isolateMode == true
 
     // … add whatever other settings you want here …
 }
