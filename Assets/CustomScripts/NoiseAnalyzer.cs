@@ -1,57 +1,53 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System;
 
-/// <summary>
-/// Listens to the mic audio clip, computes RMS each frame,
-/// and fires OnNoiseAboveThreshold whenever RMS exceeds settings.noiseThreshold.
-/// Also drives a UI Image (alarmIcon) to turn red when noise is “too loud.”
-/// </summary>
-public class NoiseDetector : MonoBehaviour
+public class NoiseAnalyzer : MonoBehaviour
 {
-    [Tooltip("Reference your SpeechToTextManager's mic clip")]
-    public AudioClip micClip;
-    [Tooltip("Number of samples per analysis frame (power-of-two, e.g. 1024)")]
-    public int fftSize = 1024;
-    [Tooltip("UI image to flash when noise is too loud")]
-    public Image alarmIcon;
+    public AudioSource micSource;
+    public Image warningIcon;
+    public RawImage spectrogramView;
+    [Tooltip("0–1 threshold for noise alarm")]
+    public float threshold = 0.1f;
 
-    public static event Action OnNoiseAboveThreshold;
-    private float[] samples;
-    private int micFreq;
-    private string micDevice;
+    const int SPECTRUM_SIZE = 256;
+
+    private Texture2D specTex;
+    private float[,] history;
 
     void Start()
     {
-        // grab your micClip from the STT manager
-        micDevice = Microphone.devices[0];
-        micFreq = SpeechToTextManager.Instance.micClip.frequency;
-        micClip = SpeechToTextManager.Instance.micClip;
-
-        samples = new float[fftSize];
+        // now it's safe to create Texture2D
+        specTex = new Texture2D(SPECTRUM_SIZE, 64, TextureFormat.RGBA32, false);
+        specTex.filterMode = FilterMode.Point;
+        history = new float[64, SPECTRUM_SIZE];
+        spectrogramView.texture = specTex;
     }
 
     void Update()
     {
-        if (micClip == null) return;
+        float[] spectrum = new float[SPECTRUM_SIZE];
+        micSource.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
 
-        // 1) RMS volume
-        micClip.GetData(samples, Microphone.GetPosition(micDevice) - fftSize);
-        float sum = 0;
-        for (int i = 0; i < fftSize; i++)
-            sum += samples[i] * samples[i];
-        float rms = Mathf.Sqrt(sum / fftSize);
+        // Noise alarm: compute RMS
+        float rms = 0f;
+        foreach (var v in spectrum) rms += v * v;
+        rms = Mathf.Sqrt(rms / SPECTRUM_SIZE);
+        warningIcon.enabled = (rms > threshold);
 
-        // 2) compare to threshold
-        float thresh = SettingsManager.Instance.settings.noiseThreshold;
-        bool noisy = rms > thresh;
+        // shift history up one row
+        for (int y = 0; y < 63; y++)
+            for (int x = 0; x < SPECTRUM_SIZE; x++)
+                history[y, x] = history[y + 1, x];
 
-        // 3) flash alarm icon
-        if (alarmIcon != null)
-            alarmIcon.color = noisy ? Color.red : Color.white;
+        // write new bottom row
+        for (int x = 0; x < SPECTRUM_SIZE; x++)
+            history[63, x] = spectrum[x] * 10f;
 
-        // 4) fire event
-        if (noisy)
-            OnNoiseAboveThreshold?.Invoke();
+        // draw into specTex
+        for (int y = 0; y < 64; y++)
+            for (int x = 0; x < SPECTRUM_SIZE; x++)
+                specTex.SetPixel(x, y, Color.Lerp(Color.black, Color.green, history[y, x]));
+
+        specTex.Apply();
     }
 }

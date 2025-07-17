@@ -23,6 +23,10 @@ public class AcousticEventManager : MonoBehaviour
     [Tooltip("Drag your TextMeshProUGUI caption here")]
     public TextMeshProUGUI captionLabel;
 
+    [Header("Naming UI")]
+    [Tooltip("Drag your existing NamePanel (the one with InputField + Save button) here")]
+    public GameObject namePanel;
+
     [Header("Timing")]
     [Tooltip("Seconds the 2D HUD stays visible")]
     public float hudDisplayTime = 5f;
@@ -34,7 +38,7 @@ public class AcousticEventManager : MonoBehaviour
     // Tracks the running hide coroutine so we can restart it
     private Coroutine hideRoutine;
 
-    // Moved subscription here to ensure SpeechToTextManager is initialized
+    // Subscribe in Start() to avoid race conditions
     void Start()
     {
         if (SpeechToTextManager.Instance != null)
@@ -45,13 +49,11 @@ public class AcousticEventManager : MonoBehaviour
 
     void OnEnable()
     {
-        // Subscription moved to Start() to avoid timing issues
-        // SpeechToTextManager.Instance.OnCaption += HandleCaption;
+        // Already hooked in Start()
     }
 
     void OnDisable()
     {
-        // Unsubscribe if instance exists
         if (SpeechToTextManager.Instance != null)
             SpeechToTextManager.Instance.OnCaption -= HandleCaption;
     }
@@ -63,26 +65,32 @@ public class AcousticEventManager : MonoBehaviour
             if (Input.GetKeyDown(src.triggerKey))
                 ShowEvent(src);
 
-        //// 2) For testing: press N to simulate a caption from speaker 0
-        //if (Input.GetKeyDown(KeyCode.N))
-        //    SpeechToTextManager.Instance.SimulateCaption("Hello world", 0);
-
-        // Eye-gaze driven speaker focus
+        // 2) (optional) Eye-gaze driven speaker focus
         if (EyeGazeManager.Instance.TryGetGaze(out Ray gazeRay))
         {
             foreach (var src in sources)
-            {
                 if (Physics.Raycast(gazeRay, out RaycastHit hit) &&
                     hit.collider.gameObject.name == src.name)
-                {
                     ShowEvent(src);
-                }
-            }
         }
     }
 
     void HandleCaption(string text, int speakerId)
     {
+        // ─────────────────────────────────────────────────────────────
+        //  NEW: if this speaker has never been named, show the panel
+        string key = $"speakerName_{speakerId}";
+        if (!PlayerPrefs.HasKey(key))
+        {
+            // configure your NamePanel's SpeakerNameSetter
+            var setter = namePanel.GetComponent<SpeakerNameSetter>();
+            setter.speakerId = speakerId;
+            // show it and bail out
+            namePanel.SetActive(true);
+            return;
+        }
+        // ─────────────────────────────────────────────────────────────
+
         // 1) Look up the saved name (defaults to "Speaker X")
         string displayName = SpeakerManager.Instance.GetName(speakerId);
 
