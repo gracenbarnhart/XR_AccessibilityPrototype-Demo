@@ -63,9 +63,9 @@ public class AcousticEventManager : MonoBehaviour
             if (Input.GetKeyDown(src.triggerKey))
                 ShowEvent(src);
 
-        // 2) For testing: press N to simulate a caption from speaker 0
-        if (Input.GetKeyDown(KeyCode.N))
-            SpeechToTextManager.Instance.SimulateCaption("Hello world", 0);
+        //// 2) For testing: press N to simulate a caption from speaker 0
+        //if (Input.GetKeyDown(KeyCode.N))
+        //    SpeechToTextManager.Instance.SimulateCaption("Hello world", 0);
 
         // Eye-gaze driven speaker focus
         if (EyeGazeManager.Instance.TryGetGaze(out Ray gazeRay))

@@ -1504,6 +1504,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 67020ada4aa549840a4061b649bbf184, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  azureKey: ***REMOVED***
+  azureRegion: westeurope
 --- !u!4 &1265544054
 Transform:
   m_ObjectHideFlags: 0
