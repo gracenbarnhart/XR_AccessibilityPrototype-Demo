@@ -78,41 +78,46 @@ public class AcousticEventManager : MonoBehaviour
     void HandleCaption(string text, int speakerId)
     {
         // ─────────────────────────────────────────────────────────────
-        //  NEW: if this speaker has never been named, show the panel
+        // 1) Speaker Isolation Filter
+        var s = SettingsManager.Instance.settings;
+        if (s.isolateMode && speakerId != s.isolatedSpeaker)
+            return;
+        // ─────────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────────
+        // 2) Dynamic Naming Popup
         string key = $"speakerName_{speakerId}";
         if (!PlayerPrefs.HasKey(key))
         {
-            // configure your NamePanel's SpeakerNameSetter
+            // Make sure your NamePanel has a SpeakerNameSetter component
             var setter = namePanel.GetComponent<SpeakerNameSetter>();
             setter.speakerId = speakerId;
-            // show it and bail out
             namePanel.SetActive(true);
             return;
         }
         // ─────────────────────────────────────────────────────────────
 
-        // 1) Look up the saved name (defaults to "Speaker X")
+        // 3) Look up the saved name
         string displayName = SpeakerManager.Instance.GetName(speakerId);
 
-        // Apply configured text color and size
-        var settings = SettingsManager.Instance.settings;
-        captionLabel.color = settings.captionColor;
-        captionLabel.fontSize = settings.fontSize;
+        // 4) Apply configured text color & size
+        captionLabel.color = s.captionColor;
+        captionLabel.fontSize = s.fontSize;
 
-        // 2) Update the caption text on the HUD
+        // 5) Update the caption text
         captionLabel.text = $"🔊 {displayName}: {text}";
 
-        // 3) Ensure the HUD panel is visible
+        // 6) Show the HUD
         worldSpaceHUD.gameObject.SetActive(true);
 
-        // 4) Re-position & orient the HUD in front of the camera
+        // 7) Position & orient in front of camera
         var cam = Camera.main.transform;
         worldSpaceHUD.transform.position = cam.position + cam.forward * 2f;
         worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
             worldSpaceHUD.transform.position - cam.position
         );
 
-        // 5) Restart the hide‐timer
+        // 8) Restart hide‐timer
         if (hideRoutine != null)
             StopCoroutine(hideRoutine);
         hideRoutine = StartCoroutine(HideHUDDelayed(hudDisplayTime));
@@ -120,14 +125,14 @@ public class AcousticEventManager : MonoBehaviour
 
     void ShowEvent(AcousticSource src)
     {
-        // Spawn the 3D marker at the source's world position
+        // Spawn 3D marker
         var marker = Instantiate(hudMarkerPrefab);
         marker.transform.position = src.worldPosition;
 
-        // Configure & show the 2D HUD with the raw source name
+        // Show 2D HUD
         worldSpaceHUD.gameObject.SetActive(true);
 
-        // Apply configured text color and size
+        // Apply color & size
         var settings = SettingsManager.Instance.settings;
         captionLabel.color = settings.captionColor;
         captionLabel.fontSize = settings.fontSize;
@@ -137,19 +142,19 @@ public class AcousticEventManager : MonoBehaviour
         captionLabel.alignment = TextAlignmentOptions.Center;
         captionLabel.text = "🔊 " + src.name;
 
-        // Position & orient the HUD
+        // Position & orient
         var cam = Camera.main.transform;
         worldSpaceHUD.transform.position = cam.position + cam.forward * 2f;
         worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
             worldSpaceHUD.transform.position - cam.position
         );
 
-        // Restart hide-timer
+        // Restart hide‐timer
         if (hideRoutine != null)
             StopCoroutine(hideRoutine);
         hideRoutine = StartCoroutine(HideHUDDelayed(hudDisplayTime));
 
-        // Trigger haptic feedback on the right hand
+        // Haptic feedback
         HapticManager.Instance.TriggerHaptic(XRNode.RightHand);
     }
 
