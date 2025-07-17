@@ -2,7 +2,6 @@
 using UnityEngine.XR;
 using TMPro;
 using System.Collections;
-using YourNamespace; // where SettingsManager and GlassesSettings live
 
 public class AcousticEventManager : MonoBehaviour
 {
@@ -35,16 +34,26 @@ public class AcousticEventManager : MonoBehaviour
     // Tracks the running hide coroutine so we can restart it
     private Coroutine hideRoutine;
 
+    // Moved subscription here to ensure SpeechToTextManager is initialized
+    void Start()
+    {
+        if (SpeechToTextManager.Instance != null)
+            SpeechToTextManager.Instance.OnCaption += HandleCaption;
+        else
+            Debug.LogError("[AcousticEventManager] No SpeechToTextManager found!");
+    }
+
     void OnEnable()
     {
-        // Subscribe to incoming captions
-        SpeechToTextManager.Instance.OnCaption += HandleCaption;
+        // Subscription moved to Start() to avoid timing issues
+        // SpeechToTextManager.Instance.OnCaption += HandleCaption;
     }
 
     void OnDisable()
     {
-        // Unsubscribe to avoid memory leaks
-        SpeechToTextManager.Instance.OnCaption -= HandleCaption;
+        // Unsubscribe if instance exists
+        if (SpeechToTextManager.Instance != null)
+            SpeechToTextManager.Instance.OnCaption -= HandleCaption;
     }
 
     void Update()

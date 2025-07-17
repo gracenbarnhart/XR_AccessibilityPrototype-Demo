@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 452061adb774be14995b01b72c047a0c, type: 3}
   m_Name: GlassesSettings
   m_EditorClassIdentifier: 
-  captionColor: {r: 1, g: 1, b: 1, a: 1}
+  captionColor: {r: 0.8650652, g: 0.91194963, b: 0.071693964, a: 1}
+  fontSize: 48
   captionScale: 1
   noiseThreshold: 0.5
   isolateSpeakers: 1
