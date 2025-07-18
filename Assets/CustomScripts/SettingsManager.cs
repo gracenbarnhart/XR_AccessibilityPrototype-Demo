@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 
 public class SettingsManager : MonoBehaviour
 {
@@ -12,16 +12,29 @@ public class SettingsManager : MonoBehaviour
 
         DontDestroyOnLoad(gameObject);
 
-        // load from PlayerPrefs if present
+        // load existing prefs
         settings.isolateMode = PlayerPrefs.GetInt("isolateMode", 0) == 1;
         settings.isolatedSpeaker = PlayerPrefs.GetInt("isolatedSpeaker", 0);
-
-        // ... you can also load other prefs here ...
+        settings.fontSize = PlayerPrefs.GetInt("fontSize", settings.fontSize);
+        settings.captionColor = LoadColor("captionColor", settings.captionColor);
+        settings.textPosition = (TextPosition)PlayerPrefs.GetInt("textPos", (int)settings.textPosition);
     }
 
-    /// <summary>
-    /// Called by UI Toggle OnValueChanged
-    /// </summary>
+    Color LoadColor(string key, Color fallback)
+    {
+        var s = PlayerPrefs.GetString(key, null);
+        if (string.IsNullOrEmpty(s)) return fallback;
+        var p = s.Split(',');
+        return new Color(float.Parse(p[0]), float.Parse(p[1]), float.Parse(p[2]), float.Parse(p[3]));
+    }
+
+    void SaveColor(string key, Color c)
+    {
+        PlayerPrefs.SetString(key, $"{c.r},{c.g},{c.b},{c.a}");
+        PlayerPrefs.Save();
+    }
+
+    // Existing isolation methods :contentReference[oaicite:1]{index=1}
     public void SetIsolationMode(bool on)
     {
         settings.isolateMode = on;
@@ -29,13 +42,35 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    /// <summary>
-    /// Called by UI Dropdown OnValueChanged
-    /// </summary>
     public void SetIsolatedSpeaker(int speakerId)
     {
         settings.isolatedSpeaker = speakerId;
         PlayerPrefs.SetInt("isolatedSpeaker", speakerId);
+        PlayerPrefs.Save();
+    }
+
+    // ← NEW: called by fontSizeSlider.onValueChanged
+    public void SetFontSize(float size)
+    {
+        settings.fontSize = Mathf.RoundToInt(size);
+        PlayerPrefs.SetInt("fontSize", settings.fontSize);
+        PlayerPrefs.Save();
+    }
+
+    // ← NEW: called by colorDropdown.onValueChanged
+    public void SetCaptionColor(int idx)
+    {
+        // map dropdown index to actual Color
+        var colors = new Color[] { Color.white, Color.yellow, Color.cyan, Color.green };
+        settings.captionColor = colors[Mathf.Clamp(idx, 0, colors.Length - 1)];
+        SaveColor("captionColor", settings.captionColor);
+    }
+
+    // ← NEW: called by positionDropdown.onValueChanged
+    public void SetTextPosition(int idx)
+    {
+        settings.textPosition = (TextPosition)idx;
+        PlayerPrefs.SetInt("textPos", idx);
         PlayerPrefs.Save();
     }
 }

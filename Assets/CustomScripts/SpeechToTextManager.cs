@@ -19,6 +19,16 @@ public class SpeechToTextManager : MonoBehaviour
     public delegate void OnTranscription(string text, int speakerId);
     public event OnTranscription OnCaption;
 
+    // ← Add the below stub **here**, directly after your event:
+    /// <summary>
+    /// Simulates a caption for testing (press N in Update())
+    /// </summary>
+    public void SimulateCaption(string txt, int id)
+    {
+        Debug.Log($"[STT] SimulateCaption: “{txt}” from speaker {id}");
+        OnCaption?.Invoke(txt, id);
+    }
+
     private AudioClip micClip;
     private string micDevice;
 
