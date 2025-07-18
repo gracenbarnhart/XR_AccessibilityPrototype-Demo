@@ -16,7 +16,13 @@ public class NoiseAnalyzer : MonoBehaviour
 
     void Start()
     {
-        // now it's safe to create Texture2D
+        // 1) Start the microphone and hook it into micSource
+        micSource.clip = Microphone.Start(null, true, 1, 16000);
+        micSource.loop = true;
+        while (Microphone.GetPosition(null) <= 0) { }
+        micSource.Play();
+
+        // 2) now it's safe to create the Texture2D for the spectrogram
         specTex = new Texture2D(SPECTRUM_SIZE, 64, TextureFormat.RGBA32, false);
         specTex.filterMode = FilterMode.Point;
         history = new float[64, SPECTRUM_SIZE];
@@ -46,7 +52,8 @@ public class NoiseAnalyzer : MonoBehaviour
         // draw into specTex
         for (int y = 0; y < 64; y++)
             for (int x = 0; x < SPECTRUM_SIZE; x++)
-                specTex.SetPixel(x, y, Color.Lerp(Color.black, Color.green, history[y, x]));
+                specTex.SetPixel(x, y,
+                    Color.Lerp(Color.black, Color.green, history[y, x]));
 
         specTex.Apply();
     }

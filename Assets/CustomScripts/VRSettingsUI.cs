@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,10 +6,6 @@ using TMPro;
 
 public class VRSettingsUI : MonoBehaviour
 {
-    [Header("Root & Content")]
-    public RectTransform panelRoot;      // your SettingsPanel / PanelRoot
-    public GameObject panelContent;   // the child GameObject holding all controls
-
     [Header("Collapse")]
     public Button collapseButton;
 
@@ -30,36 +26,46 @@ public class VRSettingsUI : MonoBehaviour
 
     void Start()
     {
-        // Collapse/Expand only the content, leave the root (and collapse button) visible
-        if (collapseButton != null && panelContent != null)
-        {
+        // 1) Collapse/Expand: toggle every child except the collapse button itself
+        if (collapseButton != null)
             collapseButton.onClick.AddListener(() =>
-                panelContent.SetActive(!panelContent.activeSelf)
-            );
-        }
+            {
+                for (int i = 0; i < transform.childCount; i++)
+                {
+                    var go = transform.GetChild(i).gameObject;
+                    if (go != collapseButton.gameObject)
+                        go.SetActive(!go.activeSelf);
+                }
+            });
 
-        // Isolation toggle
+        // 2) Isolation toggle
         isolateToggle.isOn = S.isolateMode;
         isolateToggle.onValueChanged.AddListener(SettingsManager.Instance.SetIsolationMode);
 
-        // Speaker dropdown
+        // 3) Speaker dropdown ← now using saved names
         speakerDropdown.ClearOptions();
-        var names = new List<string>();
-        var mgr = FindObjectOfType<AcousticEventManager>();
-        if (mgr != null)
-            foreach (var src in mgr.sources)
-                names.Add(src.name);
-        speakerDropdown.AddOptions(names);
-        speakerDropdown.value = S.isolatedSpeaker;
-        speakerDropdown.onValueChanged.AddListener(SettingsManager.Instance.SetIsolatedSpeaker);
+        var saved = SpeakerManager.Instance.GetAllNames();
+        var ids = new List<int>(saved.Keys);
+        var disp = new List<string>(saved.Values);
+        speakerDropdown.AddOptions(disp);
 
-        // Font size slider
+        int currId = S.isolatedSpeaker;
+        int idx = ids.IndexOf(currId);
+        speakerDropdown.value = (idx >= 0 ? idx : 0);
+
+        speakerDropdown.onValueChanged.AddListener(i =>
+        {
+            SettingsManager.Instance.SetIsolationMode(true);
+            SettingsManager.Instance.SetIsolatedSpeaker(ids[i]);
+        });
+
+        // 4) Font size slider
         fontSizeSlider.minValue = 10;
         fontSizeSlider.maxValue = 100;
         fontSizeSlider.value = S.fontSize;
         fontSizeSlider.onValueChanged.AddListener(SettingsManager.Instance.SetFontSize);
 
-        // Color dropdown
+        // 5) Color dropdown
         var colorNames = new List<string> { "White", "Yellow", "Cyan", "Green" };
         colorDropdown.ClearOptions();
         colorDropdown.AddOptions(colorNames);
@@ -68,9 +74,8 @@ public class VRSettingsUI : MonoBehaviour
         colorDropdown.value = (ci >= 0 ? ci : 0);
         colorDropdown.onValueChanged.AddListener(SettingsManager.Instance.SetCaptionColor);
 
-        // Position dropdown
-        var posNames = new List<string>
-        {
+        // 6) Position dropdown
+        var posNames = new List<string> {
             "TopLeft", "TopRight", "BottomLeft", "BottomRight", "Center"
         };
         positionDropdown.ClearOptions();
@@ -78,7 +83,7 @@ public class VRSettingsUI : MonoBehaviour
         positionDropdown.value = (int)S.textPosition;
         positionDropdown.onValueChanged.AddListener(SettingsManager.Instance.SetTextPosition);
 
-        // Hook up noise & spectrogram
+        // 7) Hook up noise & spectrogram
         var noiseAnalyzer = FindObjectOfType<NoiseAnalyzer>();
         if (noiseAnalyzer != null)
         {

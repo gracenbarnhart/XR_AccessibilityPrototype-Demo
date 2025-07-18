@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections.Generic;
 
 public class SpeakerManager : MonoBehaviour
@@ -46,5 +46,13 @@ public class SpeakerManager : MonoBehaviour
         return names.TryGetValue(speakerId, out var n)
             ? n
             : $"Speaker {speakerId}";
+    }
+
+    /// <summary>
+    /// Returns a copy of all saved speakerId→name mappings.
+    /// </summary>
+    public Dictionary<int, string> GetAllNames()
+    {
+        return new Dictionary<int, string>(names);
     }
 }
