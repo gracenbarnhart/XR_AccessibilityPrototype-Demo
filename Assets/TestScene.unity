@@ -1917,10 +1917,8 @@ MonoBehaviour:
   hudDisplayTime: 10
   sources:
   - name: Doorbell
-    triggerKey: 49
     worldPosition: {x: 0, y: 0, z: 0}
   - name: CarHorn
-    triggerKey: 50
     worldPosition: {x: 0, y: 0, z: 0}
 --- !u!4 &482451536
 Transform:
@@ -2102,8 +2100,8 @@ RectTransform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 522047729}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 2}
-  m_LocalScale: {x: 0.02, y: 0.02, z: 0.02}
+  m_LocalPosition: {x: 0, y: 0, z: 100}
+  m_LocalScale: {x: 0.35602278, y: 0.35602278, z: 0.35602278}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 540360009}
@@ -2113,8 +2111,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 378.93414, y: 200.4719}
-  m_SizeDelta: {x: 763.3333, y: 403.66666}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 774.6667, y: 324.33334}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &523031430
 GameObject:
@@ -2796,7 +2794,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -239.8, y: 8.52}
+  m_AnchoredPosition: {x: -239.80002, y: 8.520004}
   m_SizeDelta: {x: -30.18, y: 191.57}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &719323042
@@ -2855,7 +2853,7 @@ MonoBehaviour:
   fontSizeSlider: {fileID: 1854342335}
   colorDropdown: {fileID: 1603033418}
   positionDropdown: {fileID: 7613617}
-  noiseIcon: {fileID: 540360010}
+  warningIcon: {fileID: 0}
   spectrogramView: {fileID: 24608948}
 --- !u!114 &719323045
 MonoBehaviour:
@@ -3965,7 +3963,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 139.99, y: 33.3}
+  m_AnchoredPosition: {x: 139.98999, y: 33.299988}
   m_SizeDelta: {x: 160, y: 47.26}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &905870595
@@ -8073,7 +8071,7 @@ MonoBehaviour:
   fontSizeSlider: {fileID: 1854342335}
   colorDropdown: {fileID: 1603033418}
   positionDropdown: {fileID: 7613617}
-  noiseIcon: {fileID: 540360010}
+  warningIcon: {fileID: 0}
   spectrogramView: {fileID: 24608948}
 --- !u!1 &2118394911
 GameObject:

@@ -18,15 +18,15 @@ public class VRSettingsUI : MonoBehaviour
     public TMP_Dropdown colorDropdown;
     public TMP_Dropdown positionDropdown;
 
-    [Header("Noise Display")]
-    public Image noiseIcon;
+    [Header("Noise Display Wiring")]
+    public Image warningIcon;
     public RawImage spectrogramView;
 
     private GlassesSettings S => SettingsManager.Instance.settings;
 
     void Start()
     {
-        // 1) Collapse/Expand: toggle every child except the collapse button itself
+        // 1) Collapse/Expand panel children
         if (collapseButton != null)
             collapseButton.onClick.AddListener(() =>
             {
@@ -42,7 +42,7 @@ public class VRSettingsUI : MonoBehaviour
         isolateToggle.isOn = S.isolateMode;
         isolateToggle.onValueChanged.AddListener(SettingsManager.Instance.SetIsolationMode);
 
-        // 3) Speaker dropdown ← now using saved names
+        // 3) Speaker dropdown from SpeakerManager
         speakerDropdown.ClearOptions();
         var saved = SpeakerManager.Instance.GetAllNames();
         var ids = new List<int>(saved.Keys);
@@ -52,7 +52,6 @@ public class VRSettingsUI : MonoBehaviour
         int currId = S.isolatedSpeaker;
         int idx = ids.IndexOf(currId);
         speakerDropdown.value = (idx >= 0 ? idx : 0);
-
         speakerDropdown.onValueChanged.AddListener(i =>
         {
             SettingsManager.Instance.SetIsolationMode(true);
@@ -83,11 +82,11 @@ public class VRSettingsUI : MonoBehaviour
         positionDropdown.value = (int)S.textPosition;
         positionDropdown.onValueChanged.AddListener(SettingsManager.Instance.SetTextPosition);
 
-        // 7) Hook up noise & spectrogram
-        var noiseAnalyzer = FindObjectOfType<NoiseAnalyzer>();
+        // 7) Wire up NoiseAnalyzer with a fully-qualified call
+        var noiseAnalyzer = UnityEngine.Object.FindAnyObjectByType<NoiseAnalyzer>();
         if (noiseAnalyzer != null)
         {
-            noiseAnalyzer.warningIcon = noiseIcon;
+            noiseAnalyzer.warningIcon = warningIcon;
             noiseAnalyzer.spectrogramView = spectrogramView;
         }
     }
