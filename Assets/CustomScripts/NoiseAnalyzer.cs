@@ -1,60 +1,74 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
+[RequireComponent(typeof(AudioSource))]
 public class NoiseAnalyzer : MonoBehaviour
 {
+    [Header("Audio Input")]
     public AudioSource micSource;
-    public Image warningIcon;
+
+    [Header("Spectrogram")]
     public RawImage spectrogramView;
-    [Tooltip("0�1 threshold for noise alarm")]
-    public float threshold = 0.1f;
-
     const int SPECTRUM_SIZE = 256;
-
     private Texture2D specTex;
-    private float[,] history;
+    private float[,] history = new float[64, SPECTRUM_SIZE];
+
+    [Header("Loud‐Noise Alarm")]
+    [Tooltip("RMS threshold (0–1) above which the exclamation icon appears")]
+    public float alarmThreshold = 0.5f;
+    public Image warningIcon;
 
     void Start()
     {
-        // 1) Start the microphone and hook it into micSource
+        // 1) Start and loop the mic on your AudioSource
         micSource.clip = Microphone.Start(null, true, 1, 16000);
         micSource.loop = true;
         while (Microphone.GetPosition(null) <= 0) { }
         micSource.Play();
 
-        // 2) now it's safe to create the Texture2D for the spectrogram
+        // 2) Create the spectrogram texture
         specTex = new Texture2D(SPECTRUM_SIZE, 64, TextureFormat.RGBA32, false);
         specTex.filterMode = FilterMode.Point;
-        history = new float[64, SPECTRUM_SIZE];
         spectrogramView.texture = specTex;
+
+        // 3) Hide the warning icon until we hit the threshold
+        warningIcon.gameObject.SetActive(false);
     }
 
     void Update()
     {
+        // 4) Grab spectrum data
         float[] spectrum = new float[SPECTRUM_SIZE];
         micSource.GetSpectrumData(spectrum, 0, FFTWindow.BlackmanHarris);
 
-        // Noise alarm: compute RMS
-        float rms = 0f;
-        foreach (var v in spectrum) rms += v * v;
-        rms = Mathf.Sqrt(rms / SPECTRUM_SIZE);
-        warningIcon.enabled = (rms > threshold);
+        // 5) Compute RMS of the spectrum
+        float sum = 0f;
+        foreach (var v in spectrum) sum += v * v;
+        float rms = Mathf.Sqrt(sum / SPECTRUM_SIZE);
 
-        // shift history up one row
+        // 6) Toggle warningIcon only on very loud sounds
+        bool isLoud = rms > alarmThreshold;
+        if (warningIcon.gameObject.activeSelf != isLoud)
+            warningIcon.gameObject.SetActive(isLoud);
+
+        // 7) Shift spectrogram history up one row
         for (int y = 0; y < 63; y++)
             for (int x = 0; x < SPECTRUM_SIZE; x++)
                 history[y, x] = history[y + 1, x];
 
-        // write new bottom row
+        // 8) Add the newest spectrum as the bottom row
         for (int x = 0; x < SPECTRUM_SIZE; x++)
             history[63, x] = spectrum[x] * 10f;
 
-        // draw into specTex
+        // 9) Draw the history into the texture
         for (int y = 0; y < 64; y++)
+        {
             for (int x = 0; x < SPECTRUM_SIZE; x++)
-                specTex.SetPixel(x, y,
-                    Color.Lerp(Color.black, Color.green, history[y, x]));
-
+            {
+                float v = Mathf.Clamp01(history[y, x]);
+                specTex.SetPixel(x, y, Color.Lerp(Color.black, Color.green, v));
+            }
+        }
         specTex.Apply();
     }
 }
