@@ -59,7 +59,7 @@ public class AcousticEventManager : MonoBehaviour
         if (s.isolateMode && speakerId != s.isolatedSpeaker)
             return;
 
-        // 2) Dynamic naming
+        // 2) Dynamic naming popup
         string key = $"speakerName_{speakerId}";
         if (!PlayerPrefs.HasKey(key))
         {
@@ -69,7 +69,7 @@ public class AcousticEventManager : MonoBehaviour
             return;
         }
 
-        // 3) Spawn 3D marker
+        // 3) Spawn 3D marker at that speaker’s worldPosition
         if (speakerId >= 0 && speakerId < sources.Length)
         {
             var marker = Instantiate(hudMarkerPrefab);
@@ -82,13 +82,9 @@ public class AcousticEventManager : MonoBehaviour
         captionLabel.color = s.captionColor;
         captionLabel.fontSize = s.fontSize;
 
-        // 5) Show & position HUD 2m in front of camera
+        // 5) Show & position the HUD in front of camera, offset by dropdown
         worldSpaceHUD.gameObject.SetActive(true);
-        var cam = Camera.main.transform;
-        worldSpaceHUD.transform.position = cam.position + cam.forward * 2f;
-        worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
-            worldSpaceHUD.transform.position - cam.position
-        );
+        PositionHUDInFront();
 
         // 6) Restart hide timer
         if (hideRoutine != null) StopCoroutine(hideRoutine);
@@ -103,5 +99,45 @@ public class AcousticEventManager : MonoBehaviour
         yield return new WaitForSeconds(delay);
         worldSpaceHUD.gameObject.SetActive(false);
         hideRoutine = null;
+    }
+
+    /// <summary>
+    /// Positions the world-space HUD two meters ahead of the camera,
+    /// then offsets it based on the user's TextPosition setting.
+    /// </summary>
+    private void PositionHUDInFront()
+    {
+        var cam = Camera.main.transform;
+        const float distance = 2f;
+        Vector3 basePos = cam.position + cam.forward * distance;
+
+        // tweak offsets to taste
+        const float hOffset = 0.5f;
+        const float vOffset = 0.4f;
+
+        switch (SettingsManager.Instance.settings.textPosition)
+        {
+            case TextPosition.TopLeft:
+                worldSpaceHUD.transform.position = basePos + cam.up * vOffset - cam.right * hOffset;
+                break;
+            case TextPosition.TopRight:
+                worldSpaceHUD.transform.position = basePos + cam.up * vOffset + cam.right * hOffset;
+                break;
+            case TextPosition.BottomLeft:
+                worldSpaceHUD.transform.position = basePos - cam.up * vOffset - cam.right * hOffset;
+                break;
+            case TextPosition.BottomRight:
+                worldSpaceHUD.transform.position = basePos - cam.up * vOffset + cam.right * hOffset;
+                break;
+            case TextPosition.Center:
+            default:
+                worldSpaceHUD.transform.position = basePos;
+                break;
+        }
+
+        // Always face the camera
+        worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
+            worldSpaceHUD.transform.position - cam.position
+        );
     }
 }
