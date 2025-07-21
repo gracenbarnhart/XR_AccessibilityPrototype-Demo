@@ -2068,7 +2068,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!223 &522047732
 Canvas:
   m_ObjectHideFlags: 0
@@ -2078,7 +2078,7 @@ Canvas:
   m_GameObject: {fileID: 522047729}
   m_Enabled: 1
   serializedVersion: 3
-  m_RenderMode: 2
+  m_RenderMode: 0
   m_Camera: {fileID: 553027691}
   m_PlaneDistance: 100
   m_PixelPerfect: 0
@@ -2099,9 +2099,9 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 522047729}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: -2}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 540360009}
@@ -2111,9 +2111,9 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 384.60083, y: 114.80523}
-  m_SizeDelta: {x: 774.6667, y: 232.33334}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0, y: 0}
 --- !u!1 &523031430
 GameObject:
   m_ObjectHideFlags: 0
@@ -2223,7 +2223,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.000091552734, y: 0}
+  m_AnchoredPosition: {x: -0.00012207031, y: 0}
   m_SizeDelta: {x: 200, y: 400}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &540360010
@@ -2794,7 +2794,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -239.80002, y: 8.520004}
+  m_AnchoredPosition: {x: -239.80005, y: 8.52002}
   m_SizeDelta: {x: -30.18, y: 191.57}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &719323042
@@ -2853,6 +2853,9 @@ MonoBehaviour:
   fontSizeSlider: {fileID: 1854342335}
   colorDropdown: {fileID: 1603033418}
   positionDropdown: {fileID: 7613617}
+  namePanel: {fileID: 0}
+  nameInputField: {fileID: 0}
+  saveNameBtn: {fileID: 0}
   warningIcon: {fileID: 0}
   spectrogramView: {fileID: 24608948}
 --- !u!114 &719323045
@@ -4577,7 +4580,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 300, y: 50}
+  m_SizeDelta: {x: 500, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1057499651
 MonoBehaviour:
@@ -4599,7 +4602,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\U0001F50A Doorbell!"
+  m_text: "\U0001F50A Speaker"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 95b5fc6251eaa7847ade133dfb978336, type: 2}
   m_sharedMaterial: {fileID: -7183304047049096926, guid: 95b5fc6251eaa7847ade133dfb978336, type: 2}
@@ -8084,6 +8087,9 @@ MonoBehaviour:
   fontSizeSlider: {fileID: 1854342335}
   colorDropdown: {fileID: 1603033418}
   positionDropdown: {fileID: 7613617}
+  namePanel: {fileID: 2140873664}
+  nameInputField: {fileID: 1783531886}
+  saveNameBtn: {fileID: 1374614352}
   warningIcon: {fileID: 540360010}
   spectrogramView: {fileID: 24608948}
 --- !u!1 &2118394911

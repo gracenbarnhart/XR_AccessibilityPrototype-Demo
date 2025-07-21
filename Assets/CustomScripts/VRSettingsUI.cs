@@ -18,6 +18,11 @@ public class VRSettingsUI : MonoBehaviour
     public TMP_Dropdown colorDropdown;
     public TMP_Dropdown positionDropdown;
 
+    [Header("Speaker Naming (inline)")]
+    public GameObject namePanel;            // your NamePanel GameObject
+    public TMP_InputField nameInputField;   // the TMP InputField under NamePanel
+    public Button saveNameBtn;              // the Save button under NamePanel
+
     [Header("Noise Display Wiring")]
     public Image warningIcon;
     public RawImage spectrogramView;
