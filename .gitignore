@@ -25,3 +25,9 @@ MemoryCaptures/
 # OS files
 .DS_Store
 Thumbs.db
+
+# BFG artifacts
+.bfg-report/
+bfg-*.jar
+secrets.txt
+
