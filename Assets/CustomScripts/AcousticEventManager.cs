@@ -13,17 +13,17 @@ public class AcousticEventManager : MonoBehaviour
     }
 
     [Header("3D Marker")]
-    [Tooltip("Drag your HUD_Marker prefab here")]
+    [Tooltip("Drag HUD_Marker prefab here")]
     public GameObject hudMarkerPrefab;
 
     [Header("2D World-Space HUD")]
-    [Tooltip("Drag your World-Space Canvas here")]
+    [Tooltip("Drag World-Space Canvas here")]
     public Canvas worldSpaceHUD;
-    [Tooltip("Drag your TextMeshProUGUI caption here")]
+    [Tooltip("Drag TextMeshProUGUI caption here")]
     public TextMeshProUGUI captionLabel;
 
     [Header("Naming UI")]
-    [Tooltip("Drag your existing NamePanel (with InputField + Save) here")]
+    [Tooltip("Drag existing NamePanel (with InputField + Save) here")]
     public GameObject namePanel;
 
     [Header("Timing")]
@@ -31,10 +31,10 @@ public class AcousticEventManager : MonoBehaviour
     public float hudDisplayTime = 5f;
 
     [Header("Known Speaker Sources")]
-    [Tooltip("Define each speaker's world position here")]
+    [Tooltip("Define each speakers world position here")]
     public AcousticSource[] sources;
 
-    // tracks the hide coroutine so we can restart it
+    
     private Coroutine hideRoutine;
 
     void Start()
@@ -55,11 +55,11 @@ public class AcousticEventManager : MonoBehaviour
     {
         var s = SettingsManager.Instance.settings;
 
-        // 1) Isolation filter
+        //Isolation filter
         if (s.isolateMode && speakerId != s.isolatedSpeaker)
             return;
 
-        // 2) Dynamic naming popup
+        // naming popup
         string key = $"speakerName_{speakerId}";
         if (!PlayerPrefs.HasKey(key))
         {
@@ -69,28 +69,28 @@ public class AcousticEventManager : MonoBehaviour
             return;
         }
 
-        // 3) Spawn 3D marker at that speaker’s worldPosition
+        //Spawn 3D marker at that speakers worldPosition
         if (speakerId >= 0 && speakerId < sources.Length)
         {
             var marker = Instantiate(hudMarkerPrefab);
             marker.transform.position = sources[speakerId].worldPosition;
         }
 
-        // 4) Update caption text, color & size
+        //Update caption text, color & size
         string displayName = SpeakerManager.Instance.GetName(speakerId);
         captionLabel.text = $"🔊 {displayName}: {text}";
         captionLabel.color = s.captionColor;
         captionLabel.fontSize = s.fontSize;
 
-        // 5) Show & position the HUD in front of camera, offset by dropdown
+        //Show and position the HUD in front of camera offset by dropdown
         worldSpaceHUD.gameObject.SetActive(true);
         PositionHUDInFront();
 
-        // 6) Restart hide timer
+        // Restart hide timer
         if (hideRoutine != null) StopCoroutine(hideRoutine);
         hideRoutine = StartCoroutine(HideHUDDelayed(hudDisplayTime));
 
-        // 7) Haptic feedback
+        // Haptic feedback
         HapticManager.Instance.TriggerHaptic(XRNode.RightHand);
     }
 
@@ -101,17 +101,14 @@ public class AcousticEventManager : MonoBehaviour
         hideRoutine = null;
     }
 
-    /// <summary>
-    /// Positions the world-space HUD two meters ahead of the camera,
-    /// then offsets it based on the user's TextPosition setting.
-    /// </summary>
+    
     private void PositionHUDInFront()
     {
         var cam = Camera.main.transform;
         const float distance = 2f;
         Vector3 basePos = cam.position + cam.forward * distance;
 
-        // tweak offsets to taste
+        
         const float hOffset = 0.5f;
         const float vOffset = 0.4f;
 
@@ -135,7 +132,7 @@ public class AcousticEventManager : MonoBehaviour
                 break;
         }
 
-        // Always face the camera
+        
         worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
             worldSpaceHUD.transform.position - cam.position
         );

@@ -25,7 +25,6 @@ public class VRSettingsUI : MonoBehaviour
 
     [Header("Noise Display Wiring")]
     public Image warningIcon;
-    public RawImage spectrogramView;
 
     private GlassesSettings S => SettingsManager.Instance.settings;
 
@@ -91,8 +90,6 @@ public class VRSettingsUI : MonoBehaviour
         var noiseAnalyzer = UnityEngine.Object.FindAnyObjectByType<NoiseAnalyzer>();
         if (noiseAnalyzer != null)
         {
-            noiseAnalyzer.warningIcon = warningIcon;
-            noiseAnalyzer.spectrogramView = spectrogramView;
-        }
+            noiseAnalyzer.warningIcon = warningIcon;        }
     }
 }

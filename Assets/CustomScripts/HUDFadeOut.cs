@@ -7,13 +7,13 @@ public class HUDFadeOut : MonoBehaviour
 
     void Start()
     {
-        // Destroy this GameObject after displayTime seconds
+        
         Destroy(gameObject, displayTime);
     }
 
     void Update()
     {
-        // Always face the main camera so the HUD “billboards”
+        
         if (Camera.main != null)
             transform.LookAt(Camera.main.transform);
     }

@@ -8,9 +8,9 @@ public class SpeechToTextManager : MonoBehaviour
     public static SpeechToTextManager Instance { get; private set; }
 
     [Header("Azure Speech Settings")]
-    [Tooltip("Your Azure Speech service key")]
+    [Tooltip("Azure Speech service key")]
     public string azureKey;
-    [Tooltip("The region of your Azure Speech resource (e.g. westus2, westeurope)")]
+    [Tooltip("The region of Azure Speech resource (e.g. westus2, westeurope)")]
     public string azureRegion;
 
     [Tooltip("Length in seconds of each audio clip sent for transcription")]
@@ -19,9 +19,9 @@ public class SpeechToTextManager : MonoBehaviour
     public delegate void OnTranscription(string text, int speakerId);
     public event OnTranscription OnCaption;
 
-    // ← Add the below stub **here**, directly after your event:
+    // add the below stub **here**, directly after event:
     /// <summary>
-    /// Simulates a caption for testing (press N in Update())
+    /// simulates a caption for testing (press N in Update())
     /// </summary>
     public void SimulateCaption(string txt, int id)
     {
@@ -47,7 +47,7 @@ public class SpeechToTextManager : MonoBehaviour
             return;
         }
         micDevice = Microphone.devices[0];
-        // record an ever-rolling buffer of 10s at 16kHz
+        //  an ever-rolling buffer of 10s at 16kHz
         micClip = Microphone.Start(micDevice, true, 10, 16000);
         StartCoroutine(ContinuousTranscribe());
     }

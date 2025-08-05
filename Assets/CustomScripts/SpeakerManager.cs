@@ -16,8 +16,7 @@ public class SpeakerManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // Load all saved speaker names from PlayerPrefs
-        // (Assumes you have at most, say, 10 speakers; bump as needed)
+        // names playprefs
         for (int id = 0; id < 10; id++)
         {
             var key = $"speakerName_{id}";
@@ -29,7 +28,7 @@ public class SpeakerManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Call this when the user has entered a name in your popup.
+    /// name in popup
     /// </summary>
     public void SetName(int speakerId, string name)
     {
@@ -39,7 +38,7 @@ public class SpeakerManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns the saved name or a default if none.
+    /// the saved name or a default if none.
     /// </summary>
     public string GetName(int speakerId)
     {
@@ -49,7 +48,7 @@ public class SpeakerManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Returns a copy of all saved speakerId→name mappings.
+    /// a copy of all saved speakerId name mappings.
     /// </summary>
     public Dictionary<int, string> GetAllNames()
     {

@@ -11,12 +11,12 @@ public class EyeGazeManager : MonoBehaviour
         else Instance = this;
     }
 
-    // Returns true if gazeRay is valid this frame
+    //true if raygaze valid
     public bool TryGetGaze(out Ray gazeRay)
     {
         gazeRay = new Ray();
 
-        // Query the center-eye device for eye-tracking data
+        
         var device = InputDevices.GetDeviceAtXRNode(XRNode.CenterEye);
         if (device.isValid && device.TryGetFeatureValue(CommonUsages.eyesData, out Eyes eyes)
                           && eyes.TryGetFixationPoint(out Vector3 point))

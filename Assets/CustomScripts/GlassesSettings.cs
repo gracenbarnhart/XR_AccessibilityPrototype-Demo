@@ -7,6 +7,8 @@ public enum TextPosition
     TopRight,
     BottomLeft,
     BottomRight,
+    CenterLeft,
+    CenterRight,
     Center
 }
 
@@ -38,6 +40,6 @@ public class GlassesSettings : ScriptableObject
     public TextPosition textPosition = TextPosition.Center;
 
     [Header("HUD Positioning")]
-    [Tooltip("Offset from the camera for your world-space HUD (in meters)")]
+    [Tooltip("Offset from the camera for world-space HUD (in meters)")]
     public Vector3 hudOffset = new Vector3(0f, 0f, 2f);
 }

@@ -1,9 +1,13 @@
 ﻿using UnityEngine;
+using System;
 
 public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance { get; private set; }
-    public GlassesSettings settings; // drag your GlassesSettings.asset here
+    public GlassesSettings settings; 
+
+    // whenever the textPosition value changes
+    public event Action<TextPosition> OnTextPositionChanged;
 
     void Awake()
     {
@@ -25,7 +29,12 @@ public class SettingsManager : MonoBehaviour
         var s = PlayerPrefs.GetString(key, null);
         if (string.IsNullOrEmpty(s)) return fallback;
         var p = s.Split(',');
-        return new Color(float.Parse(p[0]), float.Parse(p[1]), float.Parse(p[2]), float.Parse(p[3]));
+        return new Color(
+            float.Parse(p[0]),
+            float.Parse(p[1]),
+            float.Parse(p[2]),
+            float.Parse(p[3])
+        );
     }
 
     void SaveColor(string key, Color c)
@@ -34,7 +43,7 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // Existing isolation methods :contentReference[oaicite:1]{index=1}
+    //isolation methods
     public void SetIsolationMode(bool on)
     {
         settings.isolateMode = on;
@@ -49,7 +58,7 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // ← NEW: called by fontSizeSlider.onValueChanged
+    // called by fontSizeSlider.onValueChanged
     public void SetFontSize(float size)
     {
         settings.fontSize = Mathf.RoundToInt(size);
@@ -57,20 +66,22 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // ← NEW: called by colorDropdown.onValueChanged
+    // called by colorDropdown.onValueChanged
     public void SetCaptionColor(int idx)
     {
-        // map dropdown index to actual Color
         var colors = new Color[] { Color.white, Color.yellow, Color.cyan, Color.green };
         settings.captionColor = colors[Mathf.Clamp(idx, 0, colors.Length - 1)];
         SaveColor("captionColor", settings.captionColor);
     }
 
-    // ← NEW: called by positionDropdown.onValueChanged
+    // called by positionDropdown.onValueChanged
     public void SetTextPosition(int idx)
     {
         settings.textPosition = (TextPosition)idx;
         PlayerPrefs.SetInt("textPos", idx);
         PlayerPrefs.Save();
+
+        // notify any listeners (e.g. CaptionPositioner)
+        OnTextPositionChanged?.Invoke(settings.textPosition);
     }
 }

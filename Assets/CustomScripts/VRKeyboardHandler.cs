@@ -15,21 +15,25 @@ public class VRKeyboardHandler : MonoBehaviour, IPointerClickHandler
 
     void Update()
     {
+        
         if (_kb != null)
         {
             _input.text = _kb.text;
 
+            
             if (_kb.status == TouchScreenKeyboard.Status.Done ||
                 _kb.status == TouchScreenKeyboard.Status.Canceled)
             {
                 _kb = null;
                 _input.onEndEdit?.Invoke(_input.text);
+                _input.DeactivateInputField();
             }
         }
     }
 
     public void OnPointerClick(PointerEventData eventData)
     {
+        
         _kb = TouchScreenKeyboard.Open(
             _input.text,
             TouchScreenKeyboardType.Default,
@@ -37,7 +41,18 @@ public class VRKeyboardHandler : MonoBehaviour, IPointerClickHandler
             multiline: false,
             secure: false,
             alert: false,
-            textPlaceholder: _input.text
+            textPlaceholder: _input.placeholder.GetComponent<TMP_Text>().text
         );
+
+        if (_kb == null)
+        {
+            
+            _input.ActivateInputField();
+        }
+        else
+        {
+            
+            _input.DeactivateInputField();
+        }
     }
 }
