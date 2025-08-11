@@ -2,19 +2,16 @@ using UnityEngine;
 
 public class HUDFadeOut : MonoBehaviour
 {
-    [Tooltip("How long (in seconds) the HUD marker remains visible")]
-    public float displayTime = 2f;
+    public float displayTime = 2f; // can be ignored if we don't destroy it
 
     void Start()
     {
-        
-        Destroy(gameObject, displayTime);
+        // Destroy(gameObject, displayTime); // disable auto-delete
     }
 
     void Update()
     {
-        
-        if (Camera.main != null)
-            transform.LookAt(Camera.main.transform);
+        // Optional: Keep facing camera
+        // transform.LookAt(Camera.main.transform);
     }
 }
