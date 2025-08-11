@@ -1849,6 +1849,7 @@ MonoBehaviour:
   worldSpaceHUD: {fileID: 522047732}
   captionLabel: {fileID: 1057499651}
   namePanel: {fileID: 2140873664}
+  alwaysShowHUD: 1
   hudDisplayTime: 10
   sources:
   - name: Doorbell
@@ -2038,7 +2039,7 @@ RectTransform:
   m_GameObject: {fileID: 522047729}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -2.73251}
-  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1143860240}
@@ -2049,8 +2050,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 250.26749, y: 310.88855}
-  m_SizeDelta: {x: 506, y: 624.5}
+  m_AnchoredPosition: {x: 267.26752, y: 301.88855}
+  m_SizeDelta: {x: 540.00006, y: 606.5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &522047734
 MonoBehaviour:
@@ -5434,7 +5435,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -7.4999084, y: -0.5}
+  m_AnchoredPosition: {x: -7.499939, y: -0.5}
   m_SizeDelta: {x: -35, y: -13}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &959994239
@@ -6580,7 +6581,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\U0001F50ASpeaker"
+  m_text: "\U0001F50ASpeaker:"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 95b5fc6251eaa7847ade133dfb978336, type: 2}
   m_sharedMaterial: {fileID: -7183304047049096926, guid: 95b5fc6251eaa7847ade133dfb978336, type: 2}
@@ -6623,7 +6624,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}
@@ -6919,7 +6920,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -7.4999084, y: -0.5}
+  m_AnchoredPosition: {x: -7.499939, y: -0.5}
   m_SizeDelta: {x: -35, y: -13}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1103610367
@@ -8209,9 +8210,15 @@ MonoBehaviour:
   jsonFileName: azure_speech.json
   azureKey: 9g6OaFZFPlWDiuublavdQC9HvEL3vXcag02DYKMtAyY97a9s4QHyJQQJ99BGAC5RqLJXJ3w3AAAYACOGSBi1
   azureRegion: westeurope
-  clipLength: 3
-  sampleRate: 16000
+  preferredSampleRate: 16000
+  clipLength: 4
   rollingBufferSeconds: 10
+  useDetailedFormat: 1
+  gateSilence: 0
+  silenceRmsThreshold: 0
+  logRms: 1
+  micIndex: -1
+  allowRuntimeMicCycle: 1
 --- !u!4 &1265544054
 Transform:
   m_ObjectHideFlags: 0
@@ -11558,7 +11565,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -7.4999084, y: -0.5}
+  m_AnchoredPosition: {x: -7.499939, y: -0.5}
   m_SizeDelta: {x: -35, y: -13}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1801153931
@@ -11695,7 +11702,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 30, y: 98}
+  m_AnchoredPosition: {x: 161, y: 25}
   m_SizeDelta: {x: 160, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1821036657
@@ -12453,7 +12460,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -95, y: 16}
+  m_AnchoredPosition: {x: -172, y: -39}
   m_SizeDelta: {x: 300, y: 82.7}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2140873666

@@ -26,15 +26,16 @@ public class AcousticEventManager : MonoBehaviour
     [Tooltip("Drag existing NamePanel (with InputField + Save) here")]
     public GameObject namePanel;
 
-    [Header("Timing")]
-    [Tooltip("Seconds the HUD stays visible")]
+    [Header("HUD Behaviour")]
+    [Tooltip("If true, HUD is forced to stay visible and is never deactivated")]
+    public bool alwaysShowHUD = true;
+    [Tooltip("Only used if alwaysShowHUD == false. Seconds the HUD stays visible before hiding.")]
     public float hudDisplayTime = 5f;
 
     [Header("Known Speaker Sources")]
-    [Tooltip("Define each speakers world position here")]
+    [Tooltip("Define each speaker's world position here")]
     public AcousticSource[] sources;
 
-    
     private Coroutine hideRoutine;
 
     void Start()
@@ -43,6 +44,10 @@ public class AcousticEventManager : MonoBehaviour
             SpeechToTextManager.Instance.OnCaption += HandleCaption;
         else
             Debug.LogError("[AcousticEventManager] No SpeechToTextManager found!");
+
+        // Make sure HUD starts visible if requested
+        if (worldSpaceHUD != null && alwaysShowHUD)
+            worldSpaceHUD.gameObject.SetActive(true);
     }
 
     void OnDisable()
@@ -55,11 +60,11 @@ public class AcousticEventManager : MonoBehaviour
     {
         var s = SettingsManager.Instance.settings;
 
-        //Isolation filter
+        // Isolation filter
         if (s.isolateMode && speakerId != s.isolatedSpeaker)
             return;
 
-        // naming popup
+        // Naming popup
         string key = $"speakerName_{speakerId}";
         if (!PlayerPrefs.HasKey(key))
         {
@@ -69,46 +74,63 @@ public class AcousticEventManager : MonoBehaviour
             return;
         }
 
-        //Spawn 3D marker at that speakers worldPosition
-        if (speakerId >= 0 && speakerId < sources.Length)
+        // Spawn 3D marker for that speaker (if defined)
+        if (speakerId >= 0 && speakerId < sources.Length && hudMarkerPrefab != null)
         {
             var marker = Instantiate(hudMarkerPrefab);
             marker.transform.position = sources[speakerId].worldPosition;
         }
 
-        //Update caption text, color & size
+        // Update caption text, color & size
         string displayName = SpeakerManager.Instance.GetName(speakerId);
-        captionLabel.text = $"🔊 {displayName}: {text}";
-        captionLabel.color = s.captionColor;
-        captionLabel.fontSize = s.fontSize;
+        if (captionLabel != null)
+        {
+            captionLabel.text = $"🔊 {displayName}: {text}";
+            captionLabel.color = s.captionColor;
+            captionLabel.fontSize = s.fontSize;
+        }
 
-        //Show and position the HUD in front of camera offset by dropdown
-        worldSpaceHUD.gameObject.SetActive(true);
-        PositionHUDInFront();
+        // Show and position HUD in front of camera
+        if (worldSpaceHUD != null)
+        {
+            worldSpaceHUD.gameObject.SetActive(true);
+            PositionHUDInFront();
 
-        // Restart hide timer
-        if (hideRoutine != null) StopCoroutine(hideRoutine);
-        hideRoutine = StartCoroutine(HideHUDDelayed(hudDisplayTime));
+            // NEVER HIDE if alwaysShowHUD is true
+            if (alwaysShowHUD)
+            {
+                if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
+            }
+            else
+            {
+                float delay = Mathf.Max(1.0f, hudDisplayTime); // guard tiny values
+                if (hideRoutine != null) StopCoroutine(hideRoutine);
+                hideRoutine = StartCoroutine(HideHUDDelayed(delay));
+            }
+        }
 
         // Haptic feedback
-        HapticManager.Instance.TriggerHaptic(XRNode.RightHand);
+        if (HapticManager.Instance != null)
+            HapticManager.Instance.TriggerHaptic(XRNode.RightHand);
     }
 
     private IEnumerator HideHUDDelayed(float delay)
     {
+        // Only used if alwaysShowHUD == false
         yield return new WaitForSeconds(delay);
-        worldSpaceHUD.gameObject.SetActive(false);
+        if (worldSpaceHUD != null)
+            worldSpaceHUD.gameObject.SetActive(false);
         hideRoutine = null;
     }
 
-    
     private void PositionHUDInFront()
     {
-        var cam = Camera.main.transform;
+        var cam = Camera.main?.transform;
+        if (cam == null || worldSpaceHUD == null) return;
+
         const float distance = 2f;
         Vector3 basePos = cam.position + cam.forward * distance;
 
-        
         const float hOffset = 0.5f;
         const float vOffset = 0.4f;
 
@@ -132,7 +154,7 @@ public class AcousticEventManager : MonoBehaviour
                 break;
         }
 
-        
+        // Face the camera
         worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
             worldSpaceHUD.transform.position - cam.position
         );

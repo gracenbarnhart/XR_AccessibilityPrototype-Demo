@@ -8,82 +8,202 @@ public class SpeechToTextManager : MonoBehaviour
 {
     public static SpeechToTextManager Instance { get; private set; }
 
+    // -------------------- Config --------------------
     [Header("Config Source")]
     [Tooltip("Load Azure key & region from Assets/StreamingAssets/azure_speech.json")]
     public bool loadFromJson = true;
     public string jsonFileName = "azure_speech.json";
 
     [Header("Azure Speech Settings (fallback if JSON missing)")]
-    [Tooltip("Azure Speech service key")]
     public string azureKey;
-    [Tooltip("The region of Azure Speech resource (e.g. westus2, westeurope)")]
     public string azureRegion = "westeurope";
 
     [Header("Capture")]
-    [Tooltip("Length (seconds) per chunk sent to Azure")]
-    public float clipLength = 3f;
-    [Tooltip("Mic sample rate (Azure expects 16000)")]
-    public int sampleRate = 16000;
+    [Tooltip("Preferred mic sample rate. 0 = device default")]
+    public int preferredSampleRate = 16000;
+    [Tooltip("Seconds per chunk sent to Azure")]
+    public float clipLength = 4f;
     [Tooltip("Rolling mic buffer length (seconds)")]
     public int rollingBufferSeconds = 10;
 
+    [Header("Quality / Parsing")]
+    public bool useDetailedFormat = true;
+
+    [Header("Silence Gate (debug)")]
+    public bool gateSilence = false;             // OFF while debugging
+    public float silenceRmsThreshold = 0.001f;   // start low
+    public bool logRms = true;
+
+    [Header("Mic Selection")]
+    [Tooltip("Set to >= 0 to force a device index. -1 = auto-pick by probing RMS")]
+    public int micIndex = -1;
+    [Tooltip("Allow cycling devices at runtime with [ and ]")]
+    public bool allowRuntimeMicCycle = true;
+
+    // -------------------- API --------------------
     public delegate void OnTranscription(string text, int speakerId);
     public event OnTranscription OnCaption;
 
-    /// <summary>Simulates a caption for testing (press N)</summary>
     public void SimulateCaption(string txt, int id)
     {
         Debug.Log($"[STT] SimulateCaption: “{txt}” from speaker {id}");
         OnCaption?.Invoke(txt, id);
     }
 
+    // -------------------- Private --------------------
+    private string[] devices = Array.Empty<string>();
+    private int currentMicIndex = -1;
+    private string currentMicName = null;
     private AudioClip micClip;
-    private string micDevice;
+    private AudioSource monitorSource; // muted monitor keeps data flowing
 
     [Serializable] private class AzureJson { public string speechKey; public string region; }
-    [Serializable]
-    private class AzureResponse // legacy simple schema
-    {
-        public string RecognitionStatus;
-        public string DisplayText;
-    }
+    [Serializable] private class AzureSimple { public string RecognitionStatus; public string DisplayText; }
+    [Serializable] private class AzureDetailedNBest { public string Display; }
+    [Serializable] private class AzureDetailed { public string RecognitionStatus; public AzureDetailedNBest[] NBest; }
 
     void Awake()
     {
-        if (Instance != null && Instance != this) Destroy(gameObject);
-        else Instance = this;
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
         DontDestroyOnLoad(gameObject);
 
         if (loadFromJson) TryLoadJson();
+
+        monitorSource = GetComponent<AudioSource>();
+        if (monitorSource == null) monitorSource = gameObject.AddComponent<AudioSource>();
+        monitorSource.loop = true;
+        monitorSource.playOnAwake = false;
+        monitorSource.mute = true;
     }
 
     void Start()
     {
-        if (Microphone.devices.Length == 0)
+        devices = Microphone.devices;
+        if (devices.Length == 0)
         {
-            Debug.LogError("[STT] No microphone found! Check Windows Privacy > Microphone.");
-            enabled = false;
-            return;
+            Debug.LogError("[STT] No microphones found. Check Windows Privacy > Microphone and your input device.");
+            enabled = false; return;
         }
 
-        micDevice = Microphone.devices[0];
+        Debug.Log("[STT] Found microphones:");
+        for (int i = 0; i < devices.Length; i++) Debug.Log($"  [{i}] {devices[i]}");
 
-        // start rolling mic buffer
-        micClip = Microphone.Start(micDevice, true, Mathf.Max(rollingBufferSeconds, 2), sampleRate);
-
-        StartCoroutine(ContinuousTranscribe());
+        if (micIndex >= 0 && micIndex < devices.Length)
+        {
+            StartCoroutine(BeginMic(devices[micIndex]));
+        }
+        else
+        {
+            // Auto-pick: probe all devices and choose the one with highest RMS
+            StartCoroutine(AutoPickMicByRms());
+        }
     }
 
     void Update()
     {
-        // DEMO: press N to fake a caption without network
         if (Input.GetKeyDown(KeyCode.N))
             SimulateCaption("Demo caption (hotkey N).", 0);
+
+        if (!allowRuntimeMicCycle || devices.Length == 0) return;
+
+        if (Input.GetKeyDown(KeyCode.RightBracket)) // ]
+            CycleMic(+1);
+        else if (Input.GetKeyDown(KeyCode.LeftBracket)) // [
+            CycleMic(-1);
+    }
+
+    void CycleMic(int dir)
+    {
+        int next = (currentMicIndex + dir + devices.Length) % devices.Length;
+        Debug.Log($"[STT] Switching mic to [{next}] {devices[next]}");
+        StopCurrentMic();
+        StartCoroutine(BeginMic(devices[next]));
+    }
+
+    IEnumerator AutoPickMicByRms()
+    {
+        int bestIndex = -1;
+        float bestRms = -1f;
+
+        for (int i = 0; i < devices.Length; i++)
+        {
+            string name = devices[i];
+
+            // Skip obvious virtual/Oculus devices if we can
+            string lower = name.ToLowerInvariant();
+            if (lower.Contains("oculus") || lower.Contains("virtual") || lower.Contains("vb-audio"))
+            {
+                Debug.Log($"[STT] Skipping virtual device: {name}");
+                continue;
+            }
+
+            // Probe ~0.6s
+            int rate = preferredSampleRate <= 0 ? 0 : preferredSampleRate;
+            var testClip = Microphone.Start(name, true, 1, rate);
+            float t0 = Time.time;
+            while (Microphone.GetPosition(name) <= 0 && Time.time - t0 < 1f) yield return null;
+            yield return new WaitForSeconds(0.2f);
+
+            int frames = Mathf.Min(2048, testClip.samples);
+            float[] buf = new float[Mathf.Max(1, frames)];
+            testClip.GetData(buf, 0);
+            float rms = ComputeRms(buf);
+            Debug.Log($"[STT] Probe [{i}] {name} -> RMS={rms:F4}, freq={testClip.frequency}, ch={testClip.channels}");
+
+            if (rms > bestRms) { bestRms = rms; bestIndex = i; }
+
+            Microphone.End(name);
+        }
+
+        if (bestIndex < 0)
+        {
+            // Fallback: pick first
+            bestIndex = 0;
+            Debug.LogWarning("[STT] No suitable mic found via RMS probe; using first device.");
+        }
+
+        Debug.Log($"[STT] Auto-picked mic: [{bestIndex}] {devices[bestIndex]} (RMS={bestRms:F4})");
+        yield return BeginMic(devices[bestIndex]);
+    }
+
+    IEnumerator BeginMic(string name)
+    {
+        currentMicName = name;
+        currentMicIndex = Array.IndexOf(devices, name);
+
+        int rate = preferredSampleRate <= 0 ? 0 : preferredSampleRate;
+        micClip = Microphone.Start(currentMicName, true, Mathf.Max(rollingBufferSeconds, 2), rate);
+
+        // Wait until mic writes something
+        float t0 = Time.time;
+        while (Microphone.GetPosition(currentMicName) <= 0 && Time.time - t0 < 2f) yield return null;
+
+        if (micClip == null)
+        {
+            Debug.LogError($"[STT] Failed to start mic: {currentMicName}");
+            yield break;
+        }
+
+        Debug.Log($"[STT] Mic started: {currentMicName}, clipFreq={micClip.frequency}, ch={micClip.channels}, len={micClip.samples}");
+
+        monitorSource.clip = micClip;
+        monitorSource.Play();
+
+        // Start transcription loop (restart if already running)
+        StopCoroutineSafe(ContinuousTranscribe());
+        StartCoroutine(ContinuousTranscribe());
+    }
+
+    void StopCurrentMic()
+    {
+        if (!string.IsNullOrEmpty(currentMicName)) Microphone.End(currentMicName);
+        if (monitorSource != null) monitorSource.Stop();
+        micClip = null;
     }
 
     IEnumerator ContinuousTranscribe()
     {
-        // warm-up
         yield return new WaitForSeconds(1f);
         var wait = new WaitForSeconds(clipLength);
 
@@ -91,16 +211,24 @@ public class SpeechToTextManager : MonoBehaviour
         {
             yield return wait;
 
-            // extract ONLY the most recent clipLength seconds from the rolling buffer
-            var chunk = MakeRecentChunk(micClip, clipLength, sampleRate, micDevice);
+            var chunk = MakeRecentChunk(micClip, clipLength, currentMicName);
             if (chunk == null) continue;
 
-            // encode to WAV using your WavUtility (no file saved)
+            // RMS probe
+            float[] probe = new float[chunk.samples];
+            chunk.GetData(probe, 0);
+            float rms = ComputeRms(probe);
+            if (logRms) Debug.Log($"[STT] RMS={rms:F4}");
+            if (gateSilence && rms < silenceRmsThreshold)
+            {
+                if (logRms) Debug.Log("[STT] Skipping chunk (below threshold).");
+                continue;
+            }
+
             string _;
             byte[] wav = WavUtility.FromAudioClip(chunk, out _, saveAsFile: false);
 
-            // send to Azure
-            yield return StartCoroutine(TranscribeWithAzure(wav, text =>
+            yield return StartCoroutine(TranscribeWithAzure(wav, chunk.frequency, text =>
             {
                 if (!string.IsNullOrEmpty(text))
                     OnCaption?.Invoke(text, 0);
@@ -108,42 +236,62 @@ public class SpeechToTextManager : MonoBehaviour
         }
     }
 
-    static AudioClip MakeRecentChunk(AudioClip rolling, float seconds, int sampleRate, string device)
+    // Stereo-safe recent audio → mono chunk (keeps device rate)
+    static AudioClip MakeRecentChunk(AudioClip rolling, float seconds, string deviceName)
     {
         if (rolling == null) return null;
 
-        int need = Mathf.Clamp(Mathf.RoundToInt(seconds * sampleRate), 1, rolling.samples);
-        int micPos = Microphone.GetPosition(device);
-        if (micPos < 0) return null;
+        int rate = Mathf.Max(8000, rolling.frequency);
+        int channels = Mathf.Max(1, rolling.channels);
 
-        float[] buffer = new float[need];
+        int needFrames = Mathf.Clamp(Mathf.RoundToInt(seconds * rate), 1, rolling.samples);
+        int pos = Microphone.GetPosition(deviceName);
+        if (pos < 0) return null;
 
-        int end = micPos;
-        int start = end - need;
+        float[] interleaved = new float[needFrames * channels];
+
+        int end = pos;               // frames
+        int start = end - needFrames;
 
         if (start >= 0)
         {
-            rolling.GetData(buffer, start);
+            rolling.GetData(interleaved, start);
         }
         else
         {
-            int firstLen = -start;
-            float[] head = new float[firstLen];
-            float[] tail = new float[need - firstLen];
+            int firstFrames = -start;
+            int secondFrames = needFrames - firstFrames;
 
-            rolling.GetData(head, rolling.samples + start);
-            rolling.GetData(tail, 0);
+            float[] tail = new float[firstFrames * channels];
+            rolling.GetData(tail, rolling.samples + start);
+            Array.Copy(tail, 0, interleaved, 0, tail.Length);
 
-            Array.Copy(head, 0, buffer, 0, head.Length);
-            Array.Copy(tail, 0, buffer, head.Length, tail.Length);
+            float[] head = new float[secondFrames * channels];
+            rolling.GetData(head, 0);
+            Array.Copy(head, 0, interleaved, tail.Length, head.Length);
         }
 
-        var chunk = AudioClip.Create("stt_chunk", need, 1, sampleRate, false);
-        chunk.SetData(buffer, 0);
+        // Downmix to mono
+        float[] mono = new float[needFrames];
+        if (channels == 1)
+            Array.Copy(interleaved, mono, mono.Length);
+        else
+        {
+            for (int f = 0; f < needFrames; f++)
+            {
+                double sum = 0;
+                int baseIdx = f * channels;
+                for (int c = 0; c < channels; c++) sum += interleaved[baseIdx + c];
+                mono[f] = (float)(sum / channels);
+            }
+        }
+
+        var chunk = AudioClip.Create("stt_chunk", needFrames, 1, rate, false);
+        chunk.SetData(mono, 0);
         return chunk;
     }
 
-    IEnumerator TranscribeWithAzure(byte[] wavData, Action<string> onResult)
+    IEnumerator TranscribeWithAzure(byte[] wavData, int sampleRateForHeader, Action<string> onResult)
     {
         if (string.IsNullOrEmpty(azureKey) || string.IsNullOrEmpty(azureRegion))
         {
@@ -151,14 +299,15 @@ public class SpeechToTextManager : MonoBehaviour
             yield break;
         }
 
-        var uri = $"https://{azureRegion}.stt.speech.microsoft.com/speech/recognition/" +
-                  "conversation/cognitiveservices/v1?language=en-US";
+        string uri =
+            $"https://{azureRegion}.stt.speech.microsoft.com/speech/recognition/dictation/cognitiveservices/v1?language=en-US" +
+            (useDetailedFormat ? "&format=detailed" : "");
 
         using var req = new UnityWebRequest(uri, UnityWebRequest.kHttpVerbPOST);
         req.uploadHandler = new UploadHandlerRaw(wavData);
         req.downloadHandler = new DownloadHandlerBuffer();
         req.SetRequestHeader("Ocp-Apim-Subscription-Key", azureKey);
-        req.SetRequestHeader("Content-Type", "audio/wav; codecs=audio/pcm; samplerate=16000");
+        req.SetRequestHeader("Content-Type", $"audio/wav; codecs=audio/pcm; samplerate={sampleRateForHeader}");
 
         yield return req.SendWebRequest();
 
@@ -170,35 +319,58 @@ public class SpeechToTextManager : MonoBehaviour
 
         string json = req.downloadHandler.text;
 
-        // Try simple schema first
+        // Simple schema
         try
         {
-            var parsed = JsonUtility.FromJson<AzureResponse>(json);
-            if (parsed != null && parsed.RecognitionStatus == "Success" && !string.IsNullOrEmpty(parsed.DisplayText))
+            var simple = JsonUtility.FromJson<AzureSimple>(json);
+            if (simple != null &&
+                string.Equals(simple.RecognitionStatus, "Success", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrEmpty(simple.DisplayText))
             {
-                onResult?.Invoke(parsed.DisplayText);
+                onResult?.Invoke(simple.DisplayText);
                 yield break;
             }
         }
-        catch { /* fall through to tolerant parser */ }
+        catch { }
 
-        // Fallback: tolerant grab of "DisplayText"
-        string display = TryExtractDisplayText(json);
+        // Detailed schema (NBest)
+        if (useDetailedFormat)
+        {
+            try
+            {
+                var det = JsonUtility.FromJson<AzureDetailed>(json);
+                if (det != null && det.NBest != null && det.NBest.Length > 0 && !string.IsNullOrEmpty(det.NBest[0].Display))
+                {
+                    onResult?.Invoke(det.NBest[0].Display);
+                    yield break;
+                }
+            }
+            catch { }
+        }
+
+        // Tolerant string pickers
+        string display = TryExtractFirst(json, "\"DisplayText\":\"") ?? TryExtractFirst(json, "\"Display\":\"");
         if (!string.IsNullOrEmpty(display))
             onResult?.Invoke(display);
         else
             Debug.Log($"[STT][Azure] Unrecognized response:\n{json}");
     }
 
-    static string TryExtractDisplayText(string json)
+    static string TryExtractFirst(string json, string key)
     {
-        const string key = "\"DisplayText\":\"";
         int i = json.IndexOf(key, StringComparison.OrdinalIgnoreCase);
         if (i < 0) return null;
         int start = i + key.Length;
         int end = json.IndexOf("\"", start, StringComparison.Ordinal);
         if (end < 0) return null;
         return json.Substring(start, end - start).Replace("\\n", "\n").Replace("\\\"", "\"");
+    }
+
+    static float ComputeRms(float[] samples)
+    {
+        double sum = 0;
+        for (int i = 0; i < samples.Length; i++) sum += samples[i] * samples[i];
+        return Mathf.Sqrt((float)(sum / Math.Max(1, samples.Length)));
     }
 
     void TryLoadJson()
@@ -208,7 +380,6 @@ public class SpeechToTextManager : MonoBehaviour
             string path = Path.Combine(Application.streamingAssetsPath, jsonFileName);
 
 #if UNITY_ANDROID || UNITY_WEBGL
-            // If you ever target these, StreamingAssets needs UWR:
             StartCoroutine(LoadJsonStreaming(path));
 #else
             if (File.Exists(path))
@@ -237,5 +408,11 @@ public class SpeechToTextManager : MonoBehaviour
             Debug.Log("[STT] Loaded Azure config from StreamingAssets (UWR).");
         }
         else Debug.LogWarning($"[STT] JSON request failed: {req.error}");
+    }
+
+    // Utility to stop a coroutine safely if it's running
+    void StopCoroutineSafe(IEnumerator routine)
+    {
+        // no-op helper; present for clarity if you refactor
     }
 }

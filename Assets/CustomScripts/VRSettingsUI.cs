@@ -29,6 +29,12 @@ public class VRSettingsUI : MonoBehaviour
 
     private GlassesSettings S => SettingsManager.Instance.settings;
 
+    void OnEnable()
+    {
+        // When the HUD/panel becomes active again, repin immediately.
+        PinUI();
+    }
+
     void Start()
     {
         if (collapseButton != null)
@@ -39,7 +45,8 @@ public class VRSettingsUI : MonoBehaviour
                     var go = transform.GetChild(i).gameObject;
                     if (go != collapseButton.gameObject) go.SetActive(!go.activeSelf);
                 }
-                StartCoroutine(RepinNextFrame());
+                // Wait a frame AFTER layout changes, but do it safely
+                CoroutineRunner.Run(RepinWhenActiveNextFrame());
             });
 
         isolateToggle.isOn = S.isolateMode;
@@ -58,7 +65,7 @@ public class VRSettingsUI : MonoBehaviour
         {
             SettingsManager.Instance.SetIsolationMode(true);
             SettingsManager.Instance.SetIsolatedSpeaker(ids[i]);
-            StartCoroutine(RepinNextFrame());
+            CoroutineRunner.Run(RepinWhenActiveNextFrame());
         });
 
         fontSizeSlider.minValue = 10;
@@ -86,9 +93,12 @@ public class VRSettingsUI : MonoBehaviour
         PinUI();
     }
 
-    IEnumerator RepinNextFrame()
+    // Wait a frame, then only repin if our GO is active again.
+    IEnumerator RepinWhenActiveNextFrame()
     {
-        yield return null;
+        yield return null; // wait for layout/activation toggles to settle
+        // if the panel was hidden, wait until it's active
+        while (!gameObject.activeInHierarchy) yield return null;
         PinUI();
     }
 
