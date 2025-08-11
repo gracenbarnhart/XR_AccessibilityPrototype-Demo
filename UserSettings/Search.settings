@@ -5,7 +5,7 @@ fetchPreview = true
 defaultFlags = 0
 keepOpen = true
 queryFolder = "Assets"
-onBoardingDoNotAskAgain = false
+onBoardingDoNotAskAgain = true
 showPackageIndexes = false
 showStatusBar = false
 scopes = {
@@ -72,6 +72,7 @@ providers = {
 objectSelectors = {
 }
 recentSearches = [
+	"ui cli"
 	"xri left i"
 	"xri right intera"
 	"xri righ"
