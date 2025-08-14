@@ -29,5 +29,6 @@ The credentials and region are already embedded-  no setup is required for playb
 
 Notes:
 Designed for desktop viewing, no VR headset required.
-For VR playback, adjust the XR settings in Project Settings, XR Plug-in Management
+For VR playback, adjust the XR settings in Project Settings, XR Plug-in Management.
+
 
