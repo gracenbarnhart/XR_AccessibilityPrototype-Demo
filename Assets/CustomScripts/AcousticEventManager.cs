@@ -45,7 +45,6 @@ public class AcousticEventManager : MonoBehaviour
         else
             Debug.LogError("[AcousticEventManager] No SpeechToTextManager found!");
 
-        // Make sure HUD starts visible if requested
         if (worldSpaceHUD != null && alwaysShowHUD)
             worldSpaceHUD.gameObject.SetActive(true);
     }
@@ -60,11 +59,9 @@ public class AcousticEventManager : MonoBehaviour
     {
         var s = SettingsManager.Instance.settings;
 
-        // Isolation filter
         if (s.isolateMode && speakerId != s.isolatedSpeaker)
             return;
 
-        // Naming popup
         string key = $"speakerName_{speakerId}";
         if (!PlayerPrefs.HasKey(key))
         {
@@ -74,14 +71,12 @@ public class AcousticEventManager : MonoBehaviour
             return;
         }
 
-        // Spawn 3D marker for that speaker (if defined)
         if (speakerId >= 0 && speakerId < sources.Length && hudMarkerPrefab != null)
         {
             var marker = Instantiate(hudMarkerPrefab);
             marker.transform.position = sources[speakerId].worldPosition;
         }
 
-        // Update caption text, color & size
         string displayName = SpeakerManager.Instance.GetName(speakerId);
         if (captionLabel != null)
         {
@@ -90,33 +85,29 @@ public class AcousticEventManager : MonoBehaviour
             captionLabel.fontSize = s.fontSize;
         }
 
-        // Show and position HUD in front of camera
         if (worldSpaceHUD != null)
         {
             worldSpaceHUD.gameObject.SetActive(true);
             PositionHUDInFront();
 
-            // NEVER HIDE if alwaysShowHUD is true
             if (alwaysShowHUD)
             {
                 if (hideRoutine != null) { StopCoroutine(hideRoutine); hideRoutine = null; }
             }
             else
             {
-                float delay = Mathf.Max(1.0f, hudDisplayTime); // guard tiny values
+                float delay = Mathf.Max(1.0f, hudDisplayTime); 
                 if (hideRoutine != null) StopCoroutine(hideRoutine);
                 hideRoutine = StartCoroutine(HideHUDDelayed(delay));
             }
         }
 
-        // Haptic feedback
         if (HapticManager.Instance != null)
             HapticManager.Instance.TriggerHaptic(XRNode.RightHand);
     }
 
     private IEnumerator HideHUDDelayed(float delay)
     {
-        // Only used if alwaysShowHUD == false
         yield return new WaitForSeconds(delay);
         if (worldSpaceHUD != null)
             worldSpaceHUD.gameObject.SetActive(false);
@@ -154,7 +145,6 @@ public class AcousticEventManager : MonoBehaviour
                 break;
         }
 
-        // Face the camera
         worldSpaceHUD.transform.rotation = Quaternion.LookRotation(
             worldSpaceHUD.transform.position - cam.position
         );

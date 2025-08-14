@@ -8,7 +8,6 @@ public class SpeechToTextManager : MonoBehaviour
 {
     public static SpeechToTextManager Instance { get; private set; }
 
-    // -------------------- Config --------------------
     [Header("Config Source")]
     [Tooltip("Load Azure key & region from Assets/StreamingAssets/azure_speech.json")]
     public bool loadFromJson = true;
@@ -30,8 +29,8 @@ public class SpeechToTextManager : MonoBehaviour
     public bool useDetailedFormat = true;
 
     [Header("Silence Gate (debug)")]
-    public bool gateSilence = false;             // OFF while debugging
-    public float silenceRmsThreshold = 0.001f;   // start low
+    public bool gateSilence = false;             
+    public float silenceRmsThreshold = 0.001f;   
     public bool logRms = true;
 
     [Header("Mic Selection")]
@@ -40,7 +39,6 @@ public class SpeechToTextManager : MonoBehaviour
     [Tooltip("Allow cycling devices at runtime with [ and ]")]
     public bool allowRuntimeMicCycle = true;
 
-    // -------------------- API --------------------
     public delegate void OnTranscription(string text, int speakerId);
     public event OnTranscription OnCaption;
 
@@ -50,12 +48,11 @@ public class SpeechToTextManager : MonoBehaviour
         OnCaption?.Invoke(txt, id);
     }
 
-    // -------------------- Private --------------------
     private string[] devices = Array.Empty<string>();
     private int currentMicIndex = -1;
     private string currentMicName = null;
     private AudioClip micClip;
-    private AudioSource monitorSource; // muted monitor keeps data flowing
+    private AudioSource monitorSource; 
 
     [Serializable] private class AzureJson { public string speechKey; public string region; }
     [Serializable] private class AzureSimple { public string RecognitionStatus; public string DisplayText; }
@@ -95,7 +92,6 @@ public class SpeechToTextManager : MonoBehaviour
         }
         else
         {
-            // Auto-pick: probe all devices and choose the one with highest RMS
             StartCoroutine(AutoPickMicByRms());
         }
     }
@@ -130,7 +126,6 @@ public class SpeechToTextManager : MonoBehaviour
         {
             string name = devices[i];
 
-            // Skip obvious virtual/Oculus devices if we can
             string lower = name.ToLowerInvariant();
             if (lower.Contains("oculus") || lower.Contains("virtual") || lower.Contains("vb-audio"))
             {
@@ -138,7 +133,6 @@ public class SpeechToTextManager : MonoBehaviour
                 continue;
             }
 
-            // Probe ~0.6s
             int rate = preferredSampleRate <= 0 ? 0 : preferredSampleRate;
             var testClip = Microphone.Start(name, true, 1, rate);
             float t0 = Time.time;
@@ -158,7 +152,6 @@ public class SpeechToTextManager : MonoBehaviour
 
         if (bestIndex < 0)
         {
-            // Fallback: pick first
             bestIndex = 0;
             Debug.LogWarning("[STT] No suitable mic found via RMS probe; using first device.");
         }
@@ -175,7 +168,6 @@ public class SpeechToTextManager : MonoBehaviour
         int rate = preferredSampleRate <= 0 ? 0 : preferredSampleRate;
         micClip = Microphone.Start(currentMicName, true, Mathf.Max(rollingBufferSeconds, 2), rate);
 
-        // Wait until mic writes something
         float t0 = Time.time;
         while (Microphone.GetPosition(currentMicName) <= 0 && Time.time - t0 < 2f) yield return null;
 
@@ -190,7 +182,6 @@ public class SpeechToTextManager : MonoBehaviour
         monitorSource.clip = micClip;
         monitorSource.Play();
 
-        // Start transcription loop (restart if already running)
         StopCoroutineSafe(ContinuousTranscribe());
         StartCoroutine(ContinuousTranscribe());
     }
@@ -214,7 +205,6 @@ public class SpeechToTextManager : MonoBehaviour
             var chunk = MakeRecentChunk(micClip, clipLength, currentMicName);
             if (chunk == null) continue;
 
-            // RMS probe
             float[] probe = new float[chunk.samples];
             chunk.GetData(probe, 0);
             float rms = ComputeRms(probe);
@@ -236,7 +226,6 @@ public class SpeechToTextManager : MonoBehaviour
         }
     }
 
-    // Stereo-safe recent audio → mono chunk (keeps device rate)
     static AudioClip MakeRecentChunk(AudioClip rolling, float seconds, string deviceName)
     {
         if (rolling == null) return null;
@@ -250,7 +239,7 @@ public class SpeechToTextManager : MonoBehaviour
 
         float[] interleaved = new float[needFrames * channels];
 
-        int end = pos;               // frames
+        int end = pos;               
         int start = end - needFrames;
 
         if (start >= 0)
@@ -271,7 +260,6 @@ public class SpeechToTextManager : MonoBehaviour
             Array.Copy(head, 0, interleaved, tail.Length, head.Length);
         }
 
-        // Downmix to mono
         float[] mono = new float[needFrames];
         if (channels == 1)
             Array.Copy(interleaved, mono, mono.Length);
@@ -319,7 +307,6 @@ public class SpeechToTextManager : MonoBehaviour
 
         string json = req.downloadHandler.text;
 
-        // Simple schema
         try
         {
             var simple = JsonUtility.FromJson<AzureSimple>(json);
@@ -333,7 +320,6 @@ public class SpeechToTextManager : MonoBehaviour
         }
         catch { }
 
-        // Detailed schema (NBest)
         if (useDetailedFormat)
         {
             try
@@ -410,9 +396,7 @@ public class SpeechToTextManager : MonoBehaviour
         else Debug.LogWarning($"[STT] JSON request failed: {req.error}");
     }
 
-    // Utility to stop a coroutine safely if it's running
     void StopCoroutineSafe(IEnumerator routine)
     {
-        // no-op helper; present for clarity if you refactor
     }
 }

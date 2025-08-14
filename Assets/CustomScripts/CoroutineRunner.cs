@@ -1,7 +1,6 @@
 using System.Collections;
 using UnityEngine;
 
-/// Always-active coroutine host. Put ONE in the scene (or let it auto-create).
 public class CoroutineRunner : MonoBehaviour
 {
     private static CoroutineRunner _i;

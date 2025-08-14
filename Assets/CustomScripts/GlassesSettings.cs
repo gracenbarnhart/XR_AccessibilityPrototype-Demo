@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 
-// Put it in the global namespace so everything can see it:
 public enum TextPosition
 {
     TopLeft,

@@ -4,7 +4,7 @@ public class UIFollow : MonoBehaviour
 {
     public Transform target;
     public Vector3 offset = new Vector3(0f, -0.2f, 2f);
-    public bool followContinuously = false;   // set false for fixed HUD
+    public bool followContinuously = false;   
 
     void Start() { if (!target) target = Camera.main ? Camera.main.transform : null; Place(); if (!followContinuously) enabled = false; }
     void LateUpdate() { Place(); }

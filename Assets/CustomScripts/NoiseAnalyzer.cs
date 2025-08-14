@@ -27,7 +27,6 @@ public class NoiseAnalyzer : MonoBehaviour
             return;
         }
 
-        // hide warningIcon at start if assigned
         if (warningIcon != null)
             warningIcon.gameObject.SetActive(false);
 

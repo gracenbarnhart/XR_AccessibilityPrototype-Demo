@@ -58,7 +58,6 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // called by fontSizeSlider.onValueChanged
     public void SetFontSize(float size)
     {
         settings.fontSize = Mathf.RoundToInt(size);
@@ -66,7 +65,6 @@ public class SettingsManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    // called by colorDropdown.onValueChanged
     public void SetCaptionColor(int idx)
     {
         var colors = new Color[] { Color.white, Color.yellow, Color.cyan, Color.green };
@@ -74,14 +72,12 @@ public class SettingsManager : MonoBehaviour
         SaveColor("captionColor", settings.captionColor);
     }
 
-    // called by positionDropdown.onValueChanged
     public void SetTextPosition(int idx)
     {
         settings.textPosition = (TextPosition)idx;
         PlayerPrefs.SetInt("textPos", idx);
         PlayerPrefs.Save();
 
-        // notify any listeners (e.g. CaptionPositioner)
         OnTextPositionChanged?.Invoke(settings.textPosition);
     }
 }

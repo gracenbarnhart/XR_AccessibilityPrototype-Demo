@@ -16,7 +16,6 @@ public class SpeakerManager : MonoBehaviour
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
-        // names playprefs
         for (int id = 0; id < 10; id++)
         {
             var key = $"speakerName_{id}";
@@ -27,9 +26,7 @@ public class SpeakerManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// name in popup
-    /// </summary>
+    
     public void SetName(int speakerId, string name)
     {
         names[speakerId] = name;
@@ -37,9 +34,7 @@ public class SpeakerManager : MonoBehaviour
         PlayerPrefs.Save();
     }
 
-    /// <summary>
-    /// the saved name or a default if none.
-    /// </summary>
+    
     public string GetName(int speakerId)
     {
         return names.TryGetValue(speakerId, out var n)
@@ -47,9 +42,7 @@ public class SpeakerManager : MonoBehaviour
             : $"Speaker {speakerId}";
     }
 
-    /// <summary>
-    /// a copy of all saved speakerId name mappings.
-    /// </summary>
+    
     public Dictionary<int, string> GetAllNames()
     {
         return new Dictionary<int, string>(names);

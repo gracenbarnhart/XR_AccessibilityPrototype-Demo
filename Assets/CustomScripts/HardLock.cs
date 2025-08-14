@@ -1,9 +1,9 @@
 using UnityEngine;
 
-[DefaultExecutionOrder(10000)]  // run after everything else
+[DefaultExecutionOrder(10000)]  
 public class HardLockToCamera : MonoBehaviour
 {
-    public Transform cam;                 // leave empty to auto-use Camera.main
+    public Transform cam;                
     public Vector3 localPosition = new Vector3(0f, 0f, 1.2f);
     public Vector3 localEuler = Vector3.zero;
     public Vector3 localScale = new Vector3(0.001f, 0.001f, 0.001f);
@@ -15,7 +15,6 @@ public class HardLockToCamera : MonoBehaviour
         if (!cam) cam = Camera.main ? Camera.main.transform : null;
         if (!cam) return;
 
-        // parent to camera but preserve local values we set below
         transform.SetParent(cam, false);
 
         rb = GetComponent<Rigidbody>();
