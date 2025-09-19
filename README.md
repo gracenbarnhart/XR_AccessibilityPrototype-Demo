@@ -25,10 +25,11 @@ The project will run in desktop mode.
 
 Azure Configuration:
 This prototype uses Azure Speech Services
-The credentials and region are already embedded-  no setup is required for playback.
+The credentials and region are no longer embedded- setup is required for playback.
 
 Notes:
 Designed for desktop viewing, no VR headset required.
 For VR playback, adjust the XR settings in Project Settings, XR Plug-in Management.
+
 
 
